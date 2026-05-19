@@ -44,4 +44,10 @@ Use `example@gmail.com` with password `12345678` to sign in during development.
 ## CI/CD
 
 GitHub Actions runs formatting, typecheck, lint, tests, and build on pushes and pull requests to `main`.
-Vercel is connected to the GitHub repository for production deployment from `main`.
+Pushes to `main` can deploy to Vercel automatically when these GitHub repository secrets exist:
+
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+- `VERCEL_TOKEN`
+
+`VERCEL_TOKEN` must be created from the Vercel dashboard.
