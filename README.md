@@ -44,6 +44,7 @@ Use `example@gmail.com` with password `12345678` to sign in during development.
 ## CI/CD
 
 GitHub Actions runs formatting, typecheck, lint, tests, and build on pushes and pull requests to `main`.
+Production is available at `https://anon-socialweb.vercel.app`.
 Pushes to `main` can deploy to Vercel automatically when these GitHub repository secrets exist:
 
 - `VERCEL_ORG_ID`
