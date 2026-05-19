@@ -1,6 +1,6 @@
 import type { User } from "@/types";
 
-export const AUTH_STORAGE_KEY = "exe101.mockUser";
+export const AUTH_STORAGE_KEY = "anon.mockUser";
 
 export const MOCK_CREDENTIALS = {
   email: "example@gmail.com",

@@ -1,6 +1,6 @@
-# EXE101 Frontend
+# Anon Frontend
 
-React + Vite frontend for EXE101. The original design is available in Figma.
+React + Vite frontend for Anon. The original design is available in Figma.
 
 ## Requirements
 
