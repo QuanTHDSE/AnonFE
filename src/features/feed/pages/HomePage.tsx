@@ -94,7 +94,7 @@ const PostCard = ({ post }: { post: Post }) => (
 
 export function HomeView() {
   const navigate = useNavigate();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [trends, setTrends] = useState<string[]>([]);
 
@@ -158,7 +158,7 @@ export function HomeView() {
                           <User size={16} strokeWidth={2.5} />
                         </div>
                         <span className="text-sm font-bold text-gray-700 hidden sm:block">
-                          tranhuu...
+                          {user?.name ?? "User"}
                         </span>
                       </div>
 

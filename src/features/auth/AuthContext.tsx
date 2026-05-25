@@ -1,13 +1,14 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
-import { authService } from "@/services/authService";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { authService, type LoginPayload } from "@/services/authService";
 import type { User } from "@/types";
 
 interface AuthContextType {
   isLoggedIn: boolean;
   user: User | null;
   userEmail: string | null;
-  login: (email: string) => void;
+  login: (payload: LoginPayload) => Promise<void>;
   logout: () => void;
+  refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,17 +18,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isLoggedIn = Boolean(user);
   const userEmail = user?.email ?? null;
 
-  const login = (email: string) => {
-    setUser(authService.login(email));
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser(null);
+    };
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
+  }, []);
+
+  const login = async (payload: LoginPayload) => {
+    const loggedInUser = await authService.login(payload);
+    setUser(loggedInUser);
   };
 
   const logout = () => {
-    authService.logout();
     setUser(null);
+    void authService.logout();
+  };
+
+  const refreshUser = () => {
+    setUser(authService.getCurrentUser());
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, userEmail, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, user, userEmail, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

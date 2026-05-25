@@ -1,12 +1,41 @@
-﻿import React from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 import Vector from "@/imports/Vector";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Chrome } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Ghost, Globe } from "lucide-react";
+import { authService } from "@/services/authService";
+import { useAuth } from "@/features/auth/AuthContext";
 
 export function RegisterView() {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = React.useState(false);
+  const { refreshUser } = useAuth();
+
+  const [username, setUsername] = useState("");
+  const [anonAlias, setAnonAlias] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    try {
+      const res = await authService.register({ username, email, password, anonAlias });
+      if (res.token) {
+        refreshUser();
+        navigate("/");
+      } else {
+        navigate("/signin", { state: { registered: true } });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đăng ký thất bại. Vui lòng thử lại.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-6 font-sans">
@@ -21,7 +50,7 @@ export function RegisterView() {
           className="flex items-center gap-2 text-gray-500 hover:text-[#F15B29] transition-colors mb-8 group"
         >
           <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-          <span className="font-semibold">Back to feed</span>
+          <span className="font-semibold">Quay lại trang chủ</span>
         </button>
 
         <div className="bg-white rounded-[40px] border border-gray-100 p-10 shadow-xl shadow-orange-100/20">
@@ -33,14 +62,20 @@ export function RegisterView() {
           </div>
 
           <div className="text-center mb-10">
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Create Account</h1>
-            <p className="text-gray-500 font-medium">Join our creative community today</p>
+            <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Tạo tài khoản</h1>
+            <p className="text-gray-500 font-medium">Tham gia cộng đồng sáng tạo ngay hôm nay</p>
           </div>
 
           {/* Form */}
-          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-6" onSubmit={handleRegister}>
+            {error && (
+              <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Full Name</label>
+              <label className="text-sm font-bold text-gray-700 ml-1">Tên người dùng</label>
               <div className="relative group">
                 <User
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#F15B29] transition-colors"
@@ -48,14 +83,35 @@ export function RegisterView() {
                 />
                 <input
                   type="text"
-                  placeholder="John Doe"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="johndoe"
+                  required
                   className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Email Address</label>
+              <label className="text-sm font-bold text-gray-700 ml-1">Bí danh ẩn danh</label>
+              <div className="relative group">
+                <Ghost
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#F15B29] transition-colors"
+                  size={20}
+                />
+                <input
+                  type="text"
+                  value={anonAlias}
+                  onChange={(e) => setAnonAlias(e.target.value)}
+                  placeholder="ShadowFox"
+                  required
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700 ml-1">Địa chỉ Email</label>
               <div className="relative group">
                 <Mail
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#F15B29] transition-colors"
@@ -63,14 +119,17 @@ export function RegisterView() {
                 />
                 <input
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
+                  required
                   className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Password</label>
+              <label className="text-sm font-bold text-gray-700 ml-1">Mật khẩu</label>
               <div className="relative group">
                 <Lock
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#F15B29] transition-colors"
@@ -78,7 +137,10 @@ export function RegisterView() {
                 />
                 <input
                   type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  required
                   className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
                 />
                 <button
@@ -91,8 +153,12 @@ export function RegisterView() {
               </div>
             </div>
 
-            <button className="w-full py-4 bg-[#F15B29] text-white font-extrabold rounded-2xl hover:bg-[#d94a1d] transition-all shadow-lg shadow-orange-200 transform hover:-translate-y-0.5 active:translate-y-0">
-              Create Account
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-4 bg-[#F15B29] text-white font-extrabold rounded-2xl hover:bg-[#d94a1d] transition-all shadow-lg shadow-orange-200 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isLoading ? "Đang đăng ký..." : "Tạo tài khoản"}
             </button>
           </form>
 
@@ -103,7 +169,7 @@ export function RegisterView() {
             </div>
             <div className="relative flex justify-center text-sm uppercase">
               <span className="bg-white px-4 text-gray-400 font-bold tracking-wider">
-                Or continue with
+                Hoặc tiếp tục với
               </span>
             </div>
           </div>
@@ -111,18 +177,18 @@ export function RegisterView() {
           {/* Social Logins */}
           <div className="grid grid-cols-1 gap-4">
             <button className="flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors font-bold text-gray-700">
-              <Chrome size={20} />
+              <Globe size={20} />
               Google
             </button>
           </div>
 
           <p className="mt-10 text-center text-gray-500 font-medium">
-            Already have an account?{" "}
+            Đã có tài khoản?{" "}
             <button
               onClick={() => navigate("/signin")}
               className="text-[#F15B29] font-bold hover:underline"
             >
-              Sign In
+              Đăng nhập
             </button>
           </p>
         </div>

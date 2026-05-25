@@ -10,7 +10,7 @@ import type { SavedPost } from "@/types";
 
 export function BookmarksView() {
   const navigate = useNavigate();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [savedPosts, setSavedPosts] = useState<SavedPost[]>([]);
 
@@ -79,7 +79,7 @@ export function BookmarksView() {
                       <User size={16} strokeWidth={2.5} />
                     </div>
                     <span className="text-sm font-bold text-gray-700 hidden sm:block">
-                      tranhuu...
+                      {user?.name ?? "User"}
                     </span>
                   </div>
 

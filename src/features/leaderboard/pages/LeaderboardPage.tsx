@@ -128,7 +128,7 @@ const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
 
 export function LeaderboardView() {
   const navigate = useNavigate();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
   const [categories, setCategories] = useState<string[]>([]);
@@ -197,7 +197,7 @@ export function LeaderboardView() {
                         <User size={16} strokeWidth={2.5} />
                       </div>
                       <span className="text-sm font-bold text-gray-700 hidden sm:block">
-                        tranhuu...
+                        {user?.name ?? "User"}
                       </span>
                     </div>
 

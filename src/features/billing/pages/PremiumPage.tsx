@@ -8,7 +8,7 @@ import type { BillingCycle, PremiumPlan } from "@/types";
 
 export function PremiumView() {
   const navigate = useNavigate();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [tiers, setTiers] = useState<PremiumPlan[]>([]);
 
@@ -35,9 +35,11 @@ export function PremiumView() {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3 py-1.5 px-3 bg-gray-50 rounded-full border border-gray-200">
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-orange-100 border-2 border-white flex items-center justify-center">
-                    <span className="font-bold text-[#F15B29] text-xs">TQ</span>
+                    <span className="font-bold text-[#F15B29] text-xs">
+                      {user?.name?.slice(0, 2).toUpperCase() ?? "AN"}
+                    </span>
                   </div>
-                  <span className="font-medium text-sm hidden sm:block">tranhuu...</span>
+                  <span className="font-medium text-sm hidden sm:block">{user?.name ?? "User"}</span>
                 </div>
                 <button
                   onClick={logout}

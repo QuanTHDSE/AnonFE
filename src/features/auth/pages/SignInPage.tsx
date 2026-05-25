@@ -1,27 +1,35 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 import Vector from "@/imports/Vector";
-import { useNavigate } from "react-router";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Chrome } from "lucide-react";
+import { useNavigate, useLocation } from "react-router";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
-import { authService } from "@/services/authService";
 
 export function SignInView() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/";
+  const justRegistered = (location.state as { registered?: boolean })?.registered;
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (authService.isValidMockLogin(email, password)) {
-      login(email);
-      navigate("/");
-    } else {
-      setError("Email hoặc mật khẩu không chính xác.");
+    setError("");
+    setIsLoading(true);
+    try {
+      await login({ email, password });
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Email hoặc mật khẩu không chính xác.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -56,6 +64,12 @@ export function SignInView() {
 
           {/* Form */}
           <form className="space-y-6" onSubmit={handleLogin}>
+            {justRegistered && !error && (
+              <div className="p-3 bg-green-50 text-green-600 rounded-xl text-sm font-bold text-center">
+                Tạo tài khoản thành công! Hãy đăng nhập.
+              </div>
+            )}
+
             {error && (
               <div className="p-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold text-center">
                 {error}
@@ -74,6 +88,7 @@ export function SignInView() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
+                  required
                   className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
                 />
               </div>
@@ -96,6 +111,7 @@ export function SignInView() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  required
                   className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
                 />
                 <button
@@ -110,9 +126,10 @@ export function SignInView() {
 
             <button
               type="submit"
-              className="w-full py-4 bg-[#F15B29] text-white font-extrabold rounded-2xl hover:bg-[#d94a1d] transition-all shadow-lg shadow-orange-200 transform hover:-translate-y-0.5 active:translate-y-0"
+              disabled={isLoading}
+              className="w-full py-4 bg-[#F15B29] text-white font-extrabold rounded-2xl hover:bg-[#d94a1d] transition-all shadow-lg shadow-orange-200 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
             >
-              Đăng Nhập
+              {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
             </button>
           </form>
 
@@ -131,7 +148,7 @@ export function SignInView() {
           {/* Social Logins */}
           <div className="grid grid-cols-1 gap-4">
             <button className="flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors font-bold text-gray-700">
-              <Chrome size={20} />
+              <Globe size={20} />
               Google
             </button>
           </div>
