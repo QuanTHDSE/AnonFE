@@ -1,25 +1,37 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bell,
   Bookmark,
   Heart,
+  Loader2,
   MessageSquare,
   Search,
   Share2,
-  Star,
   TrendingUp,
   User,
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
-import type { Post } from "@/types";
+import type { FeedPostItem } from "@/types";
 
-const PostCard = ({ post }: { post: Post }) => (
+function formatRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "vừa xong";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d`;
+  return `${Math.floor(days / 7)}w`;
+}
+
+const PostCard = ({ post }: { post: FeedPostItem }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -29,79 +41,134 @@ const PostCard = ({ post }: { post: Post }) => (
     <div className="flex items-center justify-between p-6">
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-          <div className="text-gray-400">
-            <Users size={24} />
-          </div>
+          {post.author.avatar ? (
+            <img src={post.author.avatar} alt={post.author.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="text-gray-400">
+              <Users size={24} />
+            </div>
+          )}
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900">{post.author.name}</h3>
-          <p className="text-xs text-gray-500 font-medium">{post.time}</p>
+          <h3 className="font-semibold text-gray-900">
+            {post.isAnonymous ? "Ẩn danh" : post.author.name}
+          </h3>
+          <p className="text-xs text-gray-500 font-medium">{formatRelativeTime(post.createdAt)}</p>
         </div>
       </div>
-      <button className="text-gray-400 hover:text-[#F15B29] transition-colors">
-        <Bookmark size={24} />
-      </button>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
+          {post.subject.iconEmoji} {post.subject.name}
+        </span>
+        <button className="text-gray-400 hover:text-[#F15B29] transition-colors">
+          <Bookmark size={20} />
+        </button>
+      </div>
     </div>
 
     {/* Post Image */}
-    <div className="px-6 pb-4">
-      <div className="relative aspect-square rounded-[24px] overflow-hidden bg-gray-50">
-        <ImageWithFallback
-          src={post.image}
-          alt={post.caption}
-          className="w-full h-full object-cover"
-        />
-      </div>
-    </div>
+    {post.images.length > 0 && (
+      <Link to={`/posts/${post.id}`} className="block px-6 pb-4">
+        <div className="relative aspect-square rounded-[24px] overflow-hidden bg-gray-50">
+          <ImageWithFallback
+            src={post.images[0]}
+            alt={post.title}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          />
+          {post.images.length > 1 && (
+            <span className="absolute bottom-3 right-3 text-xs font-bold bg-black/50 text-white px-2 py-1 rounded-full">
+              +{post.images.length - 1}
+            </span>
+          )}
+        </div>
+      </Link>
+    )}
 
     {/* Post Body */}
     <div className="px-6 pb-6">
-      <p className="text-gray-800 font-medium mb-3">{post.caption}</p>
-      <div className="flex flex-wrap gap-2 mb-6">
-        {post.tags.map((tag) => (
-          <span
-            key={tag}
-            className="text-[#F15B29] font-semibold text-sm hover:underline cursor-pointer"
-          >
-            #{tag}
-          </span>
-        ))}
-      </div>
+      <Link to={`/posts/${post.id}`} className="block group">
+        <h4 className="font-bold text-gray-900 mb-1 group-hover:text-[#F15B29] transition-colors">{post.title}</h4>
+        <p className="text-gray-600 font-medium text-sm mb-3 line-clamp-3">{post.content}</p>
+      </Link>
+      {post.tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {post.tags.map((tag) => (
+            <span
+              key={tag}
+              className="text-[#F15B29] font-semibold text-sm hover:underline cursor-pointer"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Post Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div className="flex items-center gap-6">
-          <button className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition-colors group">
-            <Heart size={20} className="group-hover:fill-red-500" />
-            <span className="text-sm font-semibold">{post.likes}</span>
-          </button>
-          <button className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors">
-            <MessageSquare size={20} />
-            <span className="text-sm font-semibold">{post.comments}</span>
-          </button>
-          <button className="text-gray-500 hover:text-green-500 transition-colors">
-            <Share2 size={20} />
-          </button>
-        </div>
-        <div className="flex items-center gap-2 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
-          <span className="text-sm font-bold text-[#F15B29]">{post.rating}</span>
-          <Star size={16} fill="#F15B29" className="text-[#F15B29]" />
-        </div>
+      <div className="flex items-center pt-4 border-t border-gray-100 gap-6">
+        <button className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition-colors group">
+          <Heart size={20} className="group-hover:fill-red-500" />
+          <span className="text-sm font-semibold">{post.likesCount}</span>
+        </button>
+        <button className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors">
+          <MessageSquare size={20} />
+          <span className="text-sm font-semibold">{post.commentsCount}</span>
+        </button>
+        <button className="text-gray-500 hover:text-green-500 transition-colors">
+          <Share2 size={20} />
+        </button>
       </div>
     </div>
   </motion.div>
 );
 
+const PAGE_SIZE = 10;
+
 export function HomeView() {
   const navigate = useNavigate();
   const { isLoggedIn, user, logout } = useAuth();
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<FeedPostItem[]>([]);
   const [trends, setTrends] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const loadPosts = useCallback(async (searchVal: string, pageNum: number, append: boolean) => {
+    if (pageNum === 1) setIsLoading(true);
+    else setIsLoadingMore(true);
+    try {
+      const res = await postService.getPosts({ search: searchVal || undefined, page: pageNum, pageSize: PAGE_SIZE });
+      setPosts((prev) => append ? [...prev, ...res.posts] : res.posts);
+      setTotalPages(res.totalPages);
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, []);
 
   useEffect(() => {
-    void postService.getFeedPosts().then(setPosts);
+    void loadPosts(search, 1, false);
+    setPage(1);
+  }, [search, loadPosts]);
+
+  useEffect(() => {
     void postService.getTrends().then(setTrends);
   }, []);
+
+  const handleSearchChange = (val: string) => {
+    setSearchInput(val);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => setSearch(val), 400);
+  };
+
+  const handleLoadMore = () => {
+    const next = page + 1;
+    setPage(next);
+    void loadPosts(search, next, true);
+  };
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex text-gray-900 font-sans selection:bg-orange-100 selection:text-[#F15B29]">
@@ -130,6 +197,8 @@ export function HomeView() {
                 />
                 <input
                   type="text"
+                  value={searchInput}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search inspiration..."
                   className="pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl w-full md:w-64 xl:w-80 focus:outline-none focus:ring-2 focus:ring-[#F15B29]/20 focus:border-[#F15B29] transition-all shadow-sm text-sm"
                 />
@@ -194,17 +263,80 @@ export function HomeView() {
           <div className="w-full max-w-[1400px] mx-auto">
             {/* Section Header */}
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-lg font-extrabold text-gray-900">Recommended for you</h2>
+              <h2 className="text-lg font-extrabold text-gray-900">
+                {search ? `Kết quả cho "${search}"` : "Recommended for you"}
+              </h2>
             </div>
 
-            {/* Feed Grid - Multi-column / Masonry Style */}
-            <div className="columns-1 lg:columns-2 gap-6 md:gap-8 pb-20">
-              {posts.map((post) => (
-                <div key={post.id} className="break-inside-avoid w-full">
-                  <PostCard post={post} />
-                </div>
-              ))}
-            </div>
+            {/* Loading skeleton */}
+            {isLoading && (
+              <div className="columns-1 lg:columns-2 gap-6 md:gap-8">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="break-inside-avoid w-full mb-8">
+                    <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm animate-pulse">
+                      <div className="p-6 flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gray-200" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-gray-200 rounded w-32" />
+                          <div className="h-3 bg-gray-100 rounded w-16" />
+                        </div>
+                      </div>
+                      <div className="px-6 pb-4">
+                        <div className="aspect-square rounded-[24px] bg-gray-100" />
+                      </div>
+                      <div className="px-6 pb-6 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-3/4" />
+                        <div className="h-3 bg-gray-100 rounded w-full" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Feed Grid */}
+            {!isLoading && (
+              <>
+                {posts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                    <Search size={48} className="mb-4 opacity-30" />
+                    <p className="font-bold text-lg">Không tìm thấy bài viết nào</p>
+                    {search && <p className="text-sm mt-1">Thử từ khóa khác</p>}
+                  </div>
+                ) : (
+                  <div className="columns-1 lg:columns-2 gap-6 md:gap-8 pb-8">
+                    {posts.map((post) => (
+                      <div key={post.id} className="break-inside-avoid w-full">
+                        <PostCard post={post} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Load more */}
+                {page < totalPages && (
+                  <div className="flex justify-center pb-20">
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={isLoadingMore}
+                      className="flex items-center gap-2 px-8 py-3.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:border-[#F15B29] hover:text-[#F15B29] transition-all shadow-sm disabled:opacity-50"
+                    >
+                      {isLoadingMore ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" />
+                          Đang tải...
+                        </>
+                      ) : (
+                        "Xem thêm bài viết"
+                      )}
+                    </button>
+                  </div>
+                )}
+                {page >= totalPages && posts.length > 0 && (
+                  <p className="text-center text-sm text-gray-400 font-medium pb-20">Đã hiển thị tất cả bài viết</p>
+                )}
+              </>
+            )}
           </div>
         </main>
 

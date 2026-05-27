@@ -40,8 +40,9 @@ async function extractErrorMessage(res: Response): Promise<string> {
 }
 
 async function request<T>(path: string, options?: RequestInit, skipRefresh = false): Promise<T> {
+  const isFormData = options?.body instanceof FormData;
   const buildHeaders = () => ({
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...getAuthHeaders(),
     ...options?.headers,
   });
@@ -87,6 +88,9 @@ export const apiClient = {
   },
   put<T>(path: string, body: unknown): Promise<T> {
     return request<T>(path, { method: "PUT", body: JSON.stringify(body) });
+  },
+  putForm<T>(path: string, body: FormData): Promise<T> {
+    return request<T>(path, { method: "PUT", body });
   },
   delete<T>(path: string): Promise<T> {
     return request<T>(path, { method: "DELETE" });

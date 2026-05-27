@@ -11,6 +11,8 @@ import { HomeView } from "@/features/feed/pages/HomePage";
 import { HistoricalLeaderboardView } from "@/features/leaderboard/pages/HistoryLeaderboardPage";
 import { LeaderboardView } from "@/features/leaderboard/pages/LeaderboardPage";
 import { CreatePostView } from "@/features/posts/pages/CreatePostPage";
+import { EditPostView } from "@/features/posts/pages/EditPostPage";
+import { PostDetailView } from "@/features/posts/pages/PostDetailPage";
 import { FollowingView } from "@/features/social/pages/FollowingPage";
 
 export const appRoutes: RouteObject[] = [
@@ -31,6 +33,10 @@ export const appRoutes: RouteObject[] = [
         Component: RegisterView,
       },
       {
+        path: "posts/:id",
+        Component: PostDetailView,
+      },
+      {
         path: "leaderboard",
         Component: LeaderboardView,
       },
@@ -48,6 +54,10 @@ export const appRoutes: RouteObject[] = [
           {
             path: "create",
             Component: CreatePostView,
+          },
+          {
+            path: "posts/:id/edit",
+            Component: EditPostView,
           },
           {
             path: "chat",

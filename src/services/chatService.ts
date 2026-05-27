@@ -1,7 +1,4 @@
-import { chatContacts, chatMessages } from "@/mocks/content";
-import type { ChatMessage } from "@/types";
-
-const clone = <T>(value: T): T => structuredClone(value);
+import type { ChatContact, ChatMessage } from "@/types";
 
 export function createOutgoingMessage(text: string, now = new Date()): ChatMessage {
   return {
@@ -14,11 +11,11 @@ export function createOutgoingMessage(text: string, now = new Date()): ChatMessa
 }
 
 export const chatService = {
-  async getContacts() {
-    return clone(chatContacts);
+  async getContacts(): Promise<ChatContact[]> {
+    return [];
   },
 
-  async getMessages() {
-    return clone(chatMessages);
+  async getMessages(): Promise<Record<string, ChatMessage[]>> {
+    return {};
   },
 };

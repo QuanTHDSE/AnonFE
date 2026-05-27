@@ -70,6 +70,56 @@ export interface ChatMessage {
 
 export type BillingCycle = "monthly" | "yearly";
 
+export interface Subject {
+  id: string;
+  name: string;
+  slug: string;
+  iconEmoji: string;
+}
+
+export interface UpdatePostPayload {
+  title?: string;
+  content?: string;
+  tags?: string[];
+  newImages?: File[];
+  removeImageUrls?: string[];
+}
+
+export interface CreatePostPayload {
+  title: string;
+  content: string;
+  subjectId: string;
+  tags?: string[];
+  isAnonymous?: boolean;
+  images?: string[];
+}
+
+export interface FeedPostItem {
+  id: string;
+  title: string;
+  content: string;
+  images: string[];
+  tags: string[];
+  isAnonymous: boolean;
+  subject: Subject;
+  author: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  createdAt: string;
+  likesCount: number;
+  commentsCount: number;
+}
+
+export interface PaginatedPostsResponse {
+  posts: FeedPostItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface PremiumPlan {
   name: string;
   price: Record<BillingCycle, string>;

@@ -1,7 +1,4 @@
-import { followingUsers } from "@/mocks/content";
 import type { FollowingUser } from "@/types";
-
-const clone = <T>(value: T): T => structuredClone(value);
 
 export function filterFollowingUsers(users: FollowingUser[], query: string) {
   const normalizedQuery = query.trim().toLowerCase();
@@ -17,7 +14,7 @@ export function filterFollowingUsers(users: FollowingUser[], query: string) {
 }
 
 export const socialService = {
-  async getFollowingUsers() {
-    return clone(followingUsers);
+  async getFollowingUsers(): Promise<FollowingUser[]> {
+    return [];
   },
 };
