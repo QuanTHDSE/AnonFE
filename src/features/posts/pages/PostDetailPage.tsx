@@ -48,7 +48,9 @@ export function PostDetailView() {
     postService
       .getPostById(id)
       .then((data) => setPost(data))
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Không tìm thấy bài viết."))
+      .catch((err: unknown) =>
+        setError(err instanceof Error ? err.message : "Không tìm thấy bài viết."),
+      )
       .finally(() => setIsLoading(false));
   }, [id]);
 
@@ -115,138 +117,148 @@ export function PostDetailView() {
         )}
 
         {/* Post content */}
-        {!isLoading && post && (() => {
-          const images = post.images ?? [];
-          const tags = post.tags ?? [];
-          return (
-          <motion.article
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="pb-20"
-          >
-            {/* Image gallery */}
-            {images.length > 0 && (
-              <div className="mb-8">
-                <div className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
-                  <ImageWithFallback
-                    src={images[selectedImage]}
-                    alt={post.title}
-                    className="w-full max-h-[560px] object-contain"
-                  />
-                </div>
-                {images.length > 1 && (
-                  <div className="flex gap-3 mt-3 overflow-x-auto pb-1">
-                    {images.map((src, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setSelectedImage(idx)}
-                        className={`shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all ${
-                          selectedImage === idx
-                            ? "border-[#F15B29] shadow-md shadow-orange-100"
-                            : "border-gray-100 opacity-60 hover:opacity-100"
-                        }`}
-                      >
-                        <img src={src} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Post card */}
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10">
-              {/* Header: author + meta */}
-              <div className="flex items-start justify-between mb-6 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-                    {post.author?.avatar ? (
-                      <img src={post.author.avatar} alt={post.author.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Users size={24} className="text-gray-400" />
+        {!isLoading &&
+          post &&
+          (() => {
+            const images = post.images ?? [];
+            const tags = post.tags ?? [];
+            return (
+              <motion.article
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="pb-20"
+              >
+                {/* Image gallery */}
+                {images.length > 0 && (
+                  <div className="mb-8">
+                    <div className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
+                      <ImageWithFallback
+                        src={images[selectedImage]}
+                        alt={post.title}
+                        className="w-full max-h-[560px] object-contain"
+                      />
+                    </div>
+                    {images.length > 1 && (
+                      <div className="flex gap-3 mt-3 overflow-x-auto pb-1">
+                        {images.map((src, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setSelectedImage(idx)}
+                            className={`shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all ${
+                              selectedImage === idx
+                                ? "border-[#F15B29] shadow-md shadow-orange-100"
+                                : "border-gray-100 opacity-60 hover:opacity-100"
+                            }`}
+                          >
+                            <img
+                              src={src}
+                              alt={`thumb-${idx}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <p className="font-bold text-gray-900">
-                      {post.isAnonymous ? "Ẩn danh" : (post.author?.name ?? "Ẩn danh")}
-                    </p>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mt-0.5">
-                      <Calendar size={12} />
-                      {formatDate(post.createdAt)}
+                )}
+
+                {/* Post card */}
+                <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 md:p-10">
+                  {/* Header: author + meta */}
+                  <div className="flex items-start justify-between mb-6 gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+                        {post.author?.avatar ? (
+                          <img
+                            src={post.author.avatar}
+                            alt={post.author.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Users size={24} className="text-gray-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900">
+                          {post.isAnonymous ? "Ẩn danh" : (post.author?.name ?? "Ẩn danh")}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mt-0.5">
+                          <Calendar size={12} />
+                          {formatDate(post.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-bold px-3 py-1.5 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
+                        {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
+                      </span>
+                      {user?.name === post.author?.name && !post.isAnonymous && (
+                        <>
+                          <button
+                            onClick={() => navigate(`/posts/${post.id}/edit`)}
+                            className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-600 hover:text-[#F15B29] hover:bg-orange-50 border border-gray-200 hover:border-[#F15B29]/30 rounded-xl transition-all"
+                          >
+                            <Pencil size={15} />
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => setShowDeleteModal(true)}
+                            className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-600 hover:text-red-500 hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl transition-all"
+                          >
+                            <Trash2 size={15} />
+                            Xóa
+                          </button>
+                        </>
+                      )}
+                      <button className="p-2 text-gray-400 hover:text-[#F15B29] transition-colors rounded-xl hover:bg-orange-50">
+                        <Bookmark size={20} />
+                      </button>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-sm font-bold px-3 py-1.5 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
-                    {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
-                  </span>
-                  {user?.name === post.author?.name && !post.isAnonymous && (
-                    <>
-                      <button
-                        onClick={() => navigate(`/posts/${post.id}/edit`)}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-600 hover:text-[#F15B29] hover:bg-orange-50 border border-gray-200 hover:border-[#F15B29]/30 rounded-xl transition-all"
-                      >
-                        <Pencil size={15} />
-                        Sửa
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteModal(true)}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-gray-600 hover:text-red-500 hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl transition-all"
-                      >
-                        <Trash2 size={15} />
-                        Xóa
-                      </button>
-                    </>
+
+                  {/* Title */}
+                  <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-4 leading-tight">
+                    {post.title}
+                  </h1>
+
+                  {/* Content */}
+                  <p className="text-gray-700 font-medium leading-relaxed whitespace-pre-wrap mb-6">
+                    {post.content}
+                  </p>
+
+                  {/* Tags */}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-8">
+                      {tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-3 py-1 bg-orange-50 border border-orange-100 text-[#F15B29] text-sm font-bold rounded-full"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
                   )}
-                  <button className="p-2 text-gray-400 hover:text-[#F15B29] transition-colors rounded-xl hover:bg-orange-50">
-                    <Bookmark size={20} />
-                  </button>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-6 pt-6 border-t border-gray-100">
+                    <button className="flex items-center gap-2 text-gray-500 hover:text-red-500 transition-colors group">
+                      <Heart size={22} className="group-hover:fill-red-500 transition-all" />
+                      <span className="font-bold">{post.likesCount}</span>
+                    </button>
+                    <button className="flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors">
+                      <MessageSquare size={22} />
+                      <span className="font-bold">{post.commentsCount}</span>
+                    </button>
+                    <button className="flex items-center gap-2 text-gray-500 hover:text-green-500 transition-colors ml-auto">
+                      <Share2 size={22} />
+                      <span className="font-bold text-sm">Chia sẻ</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              {/* Title */}
-              <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-4 leading-tight">
-                {post.title}
-              </h1>
-
-              {/* Content */}
-              <p className="text-gray-700 font-medium leading-relaxed whitespace-pre-wrap mb-6">
-                {post.content}
-              </p>
-
-              {/* Tags */}
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 bg-orange-50 border border-orange-100 text-[#F15B29] text-sm font-bold rounded-full"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex items-center gap-6 pt-6 border-t border-gray-100">
-                <button className="flex items-center gap-2 text-gray-500 hover:text-red-500 transition-colors group">
-                  <Heart size={22} className="group-hover:fill-red-500 transition-all" />
-                  <span className="font-bold">{post.likesCount}</span>
-                </button>
-                <button className="flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors">
-                  <MessageSquare size={22} />
-                  <span className="font-bold">{post.commentsCount}</span>
-                </button>
-                <button className="flex items-center gap-2 text-gray-500 hover:text-green-500 transition-colors ml-auto">
-                  <Share2 size={22} />
-                  <span className="font-bold text-sm">Chia sẻ</span>
-                </button>
-              </div>
-            </div>
-          </motion.article>
-          );
-        })()}
+              </motion.article>
+            );
+          })()}
       </main>
 
       {/* Delete confirmation modal */}

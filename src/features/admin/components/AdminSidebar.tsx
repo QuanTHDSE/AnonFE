@@ -48,9 +48,7 @@ export function AdminSidebar() {
       <nav className="flex-1 px-3 space-y-1">
         {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
           const isActive =
-            path === "/admin"
-              ? location.pathname === "/admin"
-              : location.pathname.startsWith(path);
+            path === "/admin" ? location.pathname === "/admin" : location.pathname.startsWith(path);
 
           return (
             <motion.div

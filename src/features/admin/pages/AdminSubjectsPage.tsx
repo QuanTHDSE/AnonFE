@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AlertCircle, BookOpen, CheckCircle, ChevronLeft, ChevronRight, Loader2, Plus, Search, Smile, X } from "lucide-react";
+import {
+  AlertCircle,
+  BookOpen,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Plus,
+  Search,
+  Smile,
+  X,
+} from "lucide-react";
 import { postService } from "@/services/postService";
 import type { Subject } from "@/types";
 
@@ -50,7 +61,6 @@ export function AdminSubjectsView() {
 
   useEffect(() => {
     loadSubjects(search, page);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const handleSearchChange = (val: string) => {
@@ -211,7 +221,10 @@ export function AdminSubjectsView() {
                 {slugManual && (
                   <button
                     type="button"
-                    onClick={() => { setSlug(toSlug(name)); setSlugManual(false); }}
+                    onClick={() => {
+                      setSlug(toSlug(name));
+                      setSlugManual(false);
+                    }}
                     className="text-xs text-[#F15B29] hover:underline font-bold"
                   >
                     Tự động từ tên
@@ -234,7 +247,9 @@ export function AdminSubjectsView() {
             {/* Preview */}
             {(name || iconEmoji) && (
               <div className="p-4 bg-orange-50/60 border border-orange-100 rounded-2xl">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Xem trước</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  Xem trước
+                </p>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border border-orange-100 text-[#F15B29] text-sm font-bold rounded-full">
                   {iconEmoji || "?"} {name || "Tên môn học"}
                 </span>
@@ -276,7 +291,10 @@ export function AdminSubjectsView() {
 
           {/* Search */}
           <div className="relative">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               type="text"
               value={search}
@@ -298,7 +316,10 @@ export function AdminSubjectsView() {
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                <div key={i} className="animate-pulse flex items-center gap-3 p-3 rounded-2xl bg-gray-50">
+                <div
+                  key={i}
+                  className="animate-pulse flex items-center gap-3 p-3 rounded-2xl bg-gray-50"
+                >
                   <div className="w-10 h-10 rounded-xl bg-gray-200 shrink-0" />
                   <div className="space-y-1.5 flex-1">
                     <div className="h-4 bg-gray-200 rounded w-32" />
@@ -361,7 +382,12 @@ export function AdminSubjectsView() {
                   }, [])
                   .map((item, idx) =>
                     item === "..." ? (
-                      <span key={`ellipsis-${idx}`} className="px-1 text-gray-400 text-xs font-bold">…</span>
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-1 text-gray-400 text-xs font-bold"
+                      >
+                        …
+                      </span>
                     ) : (
                       <button
                         key={item}
@@ -375,7 +401,7 @@ export function AdminSubjectsView() {
                       >
                         {item}
                       </button>
-                    )
+                    ),
                   )}
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}

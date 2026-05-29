@@ -1,5 +1,15 @@
 import { apiClient } from "@/services/apiClient";
-import type { CreatePostPayload, CreateSubjectPayload, FeedPostItem, GetSubjectsParams, PaginatedPostsResponse, PaginatedSubjectsResponse, SavedPost, Subject, UpdatePostPayload } from "@/types";
+import type {
+  CreatePostPayload,
+  CreateSubjectPayload,
+  FeedPostItem,
+  GetSubjectsParams,
+  PaginatedPostsResponse,
+  PaginatedSubjectsResponse,
+  SavedPost,
+  Subject,
+  UpdatePostPayload,
+} from "@/types";
 
 export interface GetPostsParams {
   search?: string;
@@ -43,9 +53,7 @@ function mapPost(raw: RawPostItem): FeedPostItem {
     subject: raw.subjectId
       ? { id: raw.subjectId, name: raw.subjectName, slug: "", iconEmoji: "" }
       : null,
-    author: raw.isAnonymous
-      ? null
-      : { id: raw.authorId, name: raw.authorUsername },
+    author: raw.isAnonymous ? null : { id: raw.authorId, name: raw.authorUsername },
     createdAt: raw.createdAt,
     likesCount: raw.upvotes ?? 0,
     commentsCount: raw.commentsCount ?? 0,
@@ -73,7 +81,9 @@ export const postService = {
     if (params.page) query.set("page", String(params.page));
     if (params.pageSize) query.set("pageSize", String(params.pageSize));
     const qs = query.toString();
-    const raw = await apiClient.get<RawPaginatedPostsResponse>(`/api/v1/posts${qs ? `?${qs}` : ""}`);
+    const raw = await apiClient.get<RawPaginatedPostsResponse>(
+      `/api/v1/posts${qs ? `?${qs}` : ""}`,
+    );
     return {
       posts: raw.posts.map(mapPost),
       total: raw.total,

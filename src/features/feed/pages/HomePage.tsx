@@ -45,7 +45,11 @@ const PostCard = ({ post }: { post: FeedPostItem }) => {
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
             {post.author?.avatar ? (
-              <img src={post.author.avatar} alt={post.author.name} className="w-full h-full object-cover" />
+              <img
+                src={post.author.avatar}
+                alt={post.author.name}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="text-gray-400">
                 <Users size={24} />
@@ -56,7 +60,9 @@ const PostCard = ({ post }: { post: FeedPostItem }) => {
             <h3 className="font-semibold text-gray-900">
               {post.isAnonymous ? "Ẩn danh" : (post.author?.name ?? "Ẩn danh")}
             </h3>
-            <p className="text-xs text-gray-500 font-medium">{formatRelativeTime(post.createdAt)}</p>
+            <p className="text-xs text-gray-500 font-medium">
+              {formatRelativeTime(post.createdAt)}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -90,7 +96,9 @@ const PostCard = ({ post }: { post: FeedPostItem }) => {
       {/* Post Body */}
       <div className="px-6 pb-6">
         <Link to={`/posts/${post.id}`} className="block group">
-          <h4 className="font-bold text-gray-900 mb-1 group-hover:text-[#F15B29] transition-colors">{post.title}</h4>
+          <h4 className="font-bold text-gray-900 mb-1 group-hover:text-[#F15B29] transition-colors">
+            {post.title}
+          </h4>
           <p className="text-gray-600 font-medium text-sm mb-3 line-clamp-3">{post.content}</p>
         </Link>
         {tags.length > 0 && (
@@ -144,8 +152,12 @@ export function HomeView() {
     if (pageNum === 1) setIsLoading(true);
     else setIsLoadingMore(true);
     try {
-      const res = await postService.getPosts({ search: searchVal || undefined, page: pageNum, pageSize: PAGE_SIZE });
-      setPosts((prev) => append ? [...prev, ...res.posts] : res.posts);
+      const res = await postService.getPosts({
+        search: searchVal || undefined,
+        page: pageNum,
+        pageSize: PAGE_SIZE,
+      });
+      setPosts((prev) => (append ? [...prev, ...res.posts] : res.posts));
       setTotalPages(res.totalPages);
     } finally {
       setIsLoading(false);
@@ -337,7 +349,9 @@ export function HomeView() {
                   </div>
                 )}
                 {page >= totalPages && posts.length > 0 && (
-                  <p className="text-center text-sm text-gray-400 font-medium pb-20">Đã hiển thị tất cả bài viết</p>
+                  <p className="text-center text-sm text-gray-400 font-medium pb-20">
+                    Đã hiển thị tất cả bài viết
+                  </p>
                 )}
               </>
             )}

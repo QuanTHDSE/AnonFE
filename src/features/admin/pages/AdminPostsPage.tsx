@@ -52,7 +52,11 @@ export function AdminPostsView() {
   const loadPosts = useCallback(async (searchVal: string, pageNum: number) => {
     setIsLoading(true);
     try {
-      const res = await postService.getPosts({ search: searchVal || undefined, page: pageNum, pageSize: PAGE_SIZE });
+      const res = await postService.getPosts({
+        search: searchVal || undefined,
+        page: pageNum,
+        pageSize: PAGE_SIZE,
+      });
       setPosts(res.posts);
       setTotal(res.total);
       setTotalPages(res.totalPages);
@@ -101,10 +105,7 @@ export function AdminPostsView() {
       {/* Search */}
       <div className="flex items-center gap-4">
         <div className="relative">
-          <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-            size={18}
-          />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
             value={searchInput}
@@ -133,13 +134,27 @@ export function AdminPostsView() {
             {isLoading
               ? Array.from({ length: PAGE_SIZE }).map((_, i) => (
                   <TableRow key={i} className="animate-pulse">
-                    <TableCell><div className="h-4 bg-gray-100 rounded w-6" /></TableCell>
-                    <TableCell><div className="h-4 bg-gray-100 rounded w-48" /></TableCell>
-                    <TableCell><div className="h-4 bg-gray-100 rounded w-24" /></TableCell>
-                    <TableCell><div className="h-5 bg-gray-100 rounded-full w-20" /></TableCell>
-                    <TableCell><div className="h-4 bg-gray-100 rounded w-20" /></TableCell>
-                    <TableCell><div className="h-4 bg-gray-100 rounded-full w-4 mx-auto" /></TableCell>
-                    <TableCell><div className="h-8 bg-gray-100 rounded-xl w-8 ml-auto" /></TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-6" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-48" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-5 bg-gray-100 rounded-full w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded-full w-4 mx-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-8 bg-gray-100 rounded-xl w-8 ml-auto" />
+                    </TableCell>
                   </TableRow>
                 ))
               : posts.map((post, idx) => (
@@ -229,7 +244,9 @@ export function AdminPostsView() {
               <PaginationNext
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 aria-disabled={page === totalPages}
-                className={page === totalPages ? "pointer-events-none opacity-40" : "cursor-pointer"}
+                className={
+                  page === totalPages ? "pointer-events-none opacity-40" : "cursor-pointer"
+                }
               />
             </PaginationItem>
           </PaginationContent>
@@ -243,10 +260,8 @@ export function AdminPostsView() {
             <DialogTitle className="text-xl font-extrabold">Xóa bài viết?</DialogTitle>
             <DialogDescription className="text-gray-500 font-medium">
               Bài viết{" "}
-              <span className="font-bold text-gray-700">
-                &ldquo;{confirmPost?.title}&rdquo;
-              </span>{" "}
-              sẽ bị xóa vĩnh viễn và không thể khôi phục.
+              <span className="font-bold text-gray-700">&ldquo;{confirmPost?.title}&rdquo;</span> sẽ
+              bị xóa vĩnh viễn và không thể khôi phục.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 mt-2">

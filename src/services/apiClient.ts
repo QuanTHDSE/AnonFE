@@ -40,7 +40,7 @@ async function tryRefreshToken(): Promise<boolean> {
 }
 
 async function extractErrorMessage(res: Response): Promise<string> {
-  const body = await res.json().catch(() => ({})) as {
+  const body = (await res.json().catch(() => ({}))) as {
     message?: string | string[];
     error?: string;
     title?: string;

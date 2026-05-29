@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it } from "vitest";
 import { appRoutes } from "./router";
-import { AUTH_STORAGE_KEY } from "@/services/authService";
+import { USER_STORAGE_KEY } from "@/services/authService";
 
 function renderRoute(path: string) {
   const router = createMemoryRouter(appRoutes, {
@@ -24,7 +24,15 @@ describe("app router", () => {
   });
 
   it("renders protected routes when a mock session exists", async () => {
-    localStorage.setItem(AUTH_STORAGE_KEY, "example@gmail.com");
+    localStorage.setItem(
+      USER_STORAGE_KEY,
+      JSON.stringify({
+        id: "user-1",
+        email: "example@gmail.com",
+        name: "example",
+        role: "user",
+      }),
+    );
 
     renderRoute("/bookmarks");
 
@@ -36,7 +44,7 @@ describe("app router", () => {
     ["/leaderboard", "Top Posts"],
     ["/history", "Hall of Fame"],
     ["/premium", "Gói cước Premium"],
-    ["/register", "Create Account"],
+    ["/register", "Tạo tài khoản"],
   ])("smoke-renders %s", async (path, text) => {
     renderRoute(path);
 

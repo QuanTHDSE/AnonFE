@@ -76,7 +76,14 @@ export function CreatePostView() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || title.trim().length < 5 || !content.trim() || content.trim().length < 10 || !subjectId) return;
+    if (
+      !title.trim() ||
+      title.trim().length < 5 ||
+      !content.trim() ||
+      content.trim().length < 10 ||
+      !subjectId
+    )
+      return;
 
     setIsLoading(true);
     setSubmitStatus("idle");
@@ -155,7 +162,6 @@ export function CreatePostView() {
           className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-orange-100/10 overflow-hidden"
         >
           <form onSubmit={handleSubmit} className="p-6 md:p-10 space-y-8">
-
             {/* Image Upload Area */}
             <div className="space-y-3">
               {/* Previews */}
@@ -186,7 +192,10 @@ export function CreatePostView() {
                 className="w-full h-40 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 hover:bg-orange-50/30 hover:border-[#F15B29]/40 transition-colors cursor-pointer group"
               >
                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                  <ImageIcon size={24} className="text-gray-400 group-hover:text-[#F15B29] transition-colors" />
+                  <ImageIcon
+                    size={24}
+                    className="text-gray-400 group-hover:text-[#F15B29] transition-colors"
+                  />
                 </div>
                 <p className="font-bold text-gray-600 text-sm">Nhấn để thêm hình ảnh</p>
                 <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP · Nhiều ảnh</p>
@@ -203,7 +212,6 @@ export function CreatePostView() {
 
             {/* Input Fields */}
             <div className="space-y-6">
-
               {/* Title */}
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2">
@@ -218,7 +226,9 @@ export function CreatePostView() {
                   className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-bold text-lg text-gray-900 placeholder:font-medium"
                   required
                 />
-                <p className={`text-xs ml-1 font-medium ${title.trim().length > 0 && title.trim().length < 5 ? "text-red-400" : "text-gray-400"}`}>
+                <p
+                  className={`text-xs ml-1 font-medium ${title.trim().length > 0 && title.trim().length < 5 ? "text-red-400" : "text-gray-400"}`}
+                >
                   {title.trim().length}/255 ký tự (tối thiểu 5)
                 </p>
               </div>
@@ -237,7 +247,9 @@ export function CreatePostView() {
                   className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium text-gray-700 resize-none"
                   required
                 />
-                <p className={`text-xs ml-1 font-medium ${content.trim().length > 0 && content.trim().length < 10 ? "text-red-400" : "text-gray-400"}`}>
+                <p
+                  className={`text-xs ml-1 font-medium ${content.trim().length > 0 && content.trim().length < 10 ? "text-red-400" : "text-gray-400"}`}
+                >
                   {content.trim().length} ký tự (tối thiểu 10)
                 </p>
               </div>
@@ -260,10 +272,11 @@ export function CreatePostView() {
                         key={sub.id}
                         type="button"
                         onClick={() => setSubjectId(sub.id)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${subjectId === sub.id
-                          ? "bg-[#F15B29] border-[#F15B29] text-white shadow-md shadow-orange-200"
-                          : "bg-white border-gray-200 text-gray-600 hover:border-[#F15B29] hover:text-[#F15B29]"
-                          }`}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${
+                          subjectId === sub.id
+                            ? "bg-[#F15B29] border-[#F15B29] text-white shadow-md shadow-orange-200"
+                            : "bg-white border-gray-200 text-gray-600 hover:border-[#F15B29] hover:text-[#F15B29]"
+                        }`}
                       >
                         <span>{sub.iconEmoji}</span>
                         {sub.name}
@@ -324,10 +337,11 @@ export function CreatePostView() {
               <div className="flex items-center justify-between p-5 bg-gray-50/80 rounded-2xl border border-gray-100">
                 <div className="flex items-center gap-4">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-sm border ${isAnonymous
-                      ? "bg-orange-100 text-[#F15B29] border-orange-200"
-                      : "bg-white text-gray-400 border-gray-200"
-                      }`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-sm border ${
+                      isAnonymous
+                        ? "bg-orange-100 text-[#F15B29] border-orange-200"
+                        : "bg-white text-gray-400 border-gray-200"
+                    }`}
                   >
                     <EyeOff size={20} />
                   </div>
@@ -341,12 +355,14 @@ export function CreatePostView() {
                 <button
                   type="button"
                   onClick={() => setIsAnonymous(!isAnonymous)}
-                  className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#F15B29]/20 focus:ring-offset-2 shrink-0 ${isAnonymous ? "bg-[#F15B29]" : "bg-gray-300"
-                    }`}
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#F15B29]/20 focus:ring-offset-2 shrink-0 ${
+                    isAnonymous ? "bg-[#F15B29]" : "bg-gray-300"
+                  }`}
                 >
                   <span
-                    className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${isAnonymous ? "translate-x-6" : "translate-x-0"
-                      }`}
+                    className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${
+                      isAnonymous ? "translate-x-6" : "translate-x-0"
+                    }`}
                   />
                 </button>
               </div>

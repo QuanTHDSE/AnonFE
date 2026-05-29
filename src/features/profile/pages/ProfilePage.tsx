@@ -152,17 +152,10 @@ export function ProfileView() {
   useEffect(() => {
     if (!user) return;
     setIsLoading(true);
-    Promise.all([
-      userService.getMe(),
-      postService.getPosts({ pageSize: 100 }),
-    ])
+    Promise.all([userService.getMe(), postService.getPosts({ pageSize: 100 })])
       .then(([prof, postsRes]) => {
         setProfile(prof);
-        setPosts(
-          postsRes.posts.filter(
-            (p) => !p.isAnonymous && p.author?.id === user.id,
-          ),
-        );
+        setPosts(postsRes.posts.filter((p) => !p.isAnonymous && p.author?.id === user.id));
       })
       .finally(() => setIsLoading(false));
   }, [user]);
@@ -184,9 +177,7 @@ export function ProfileView() {
 
   const confirmPost = posts.find((p) => p.id === confirmDeleteId);
   const initials =
-    profile?.username?.slice(0, 2).toUpperCase() ??
-    user?.name?.slice(0, 2).toUpperCase() ??
-    "??";
+    profile?.username?.slice(0, 2).toUpperCase() ?? user?.name?.slice(0, 2).toUpperCase() ?? "??";
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex text-gray-900 font-sans selection:bg-orange-100 selection:text-[#F15B29]">
@@ -244,14 +235,10 @@ export function ProfileView() {
                   </p>
                   <p className="text-sm text-gray-400 font-medium mb-3">
                     Alias ẩn danh:{" "}
-                    <span className="font-bold text-gray-600">
-                      {profile?.anonAlias ?? "—"}
-                    </span>
+                    <span className="font-bold text-gray-600">{profile?.anonAlias ?? "—"}</span>
                   </p>
                   {profile?.bio && (
-                    <p className="text-sm text-gray-600 font-medium mb-3 max-w-md">
-                      {profile.bio}
-                    </p>
+                    <p className="text-sm text-gray-600 font-medium mb-3 max-w-md">{profile.bio}</p>
                   )}
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm">
                     <div className="flex items-center gap-1.5 text-gray-400 font-medium">
@@ -358,7 +345,10 @@ export function ProfileView() {
                   <h2 className="text-lg font-extrabold text-gray-900">Xóa bài viết?</h2>
                 </div>
                 <button
-                  onClick={() => { setConfirmDeleteId(null); setDeleteError(""); }}
+                  onClick={() => {
+                    setConfirmDeleteId(null);
+                    setDeleteError("");
+                  }}
                   disabled={isDeleting}
                   className="p-1.5 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                 >
@@ -368,9 +358,7 @@ export function ProfileView() {
 
               <p className="text-gray-500 font-medium mb-2 leading-relaxed text-sm">
                 Bài viết{" "}
-                <span className="font-bold text-gray-700">
-                  &ldquo;{confirmPost?.title}&rdquo;
-                </span>{" "}
+                <span className="font-bold text-gray-700">&ldquo;{confirmPost?.title}&rdquo;</span>{" "}
                 sẽ bị xóa vĩnh viễn và không thể khôi phục.
               </p>
 
@@ -382,7 +370,10 @@ export function ProfileView() {
 
               <div className="flex gap-3 mt-6">
                 <button
-                  onClick={() => { setConfirmDeleteId(null); setDeleteError(""); }}
+                  onClick={() => {
+                    setConfirmDeleteId(null);
+                    setDeleteError("");
+                  }}
                   disabled={isDeleting}
                   className="flex-1 py-3 font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
                 >

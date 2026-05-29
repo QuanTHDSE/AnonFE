@@ -107,17 +107,9 @@ function createUserFromResponse(
     fallbackEmail?.split("@")[0] ??
     "User";
 
-  const email =
-    str(response.user?.email) ??
-    str(jwt["email"]) ??
-    fallbackEmail ??
-    "";
+  const email = str(response.user?.email) ?? str(jwt["email"]) ?? fallbackEmail ?? "";
 
-  const id =
-    str(response.userId) ??
-    str(response.user?.id) ??
-    str(jwt["sub"]) ??
-    "";
+  const id = str(response.userId) ?? str(response.user?.id) ?? str(jwt["sub"]) ?? "";
 
   const jwtRole = getRoleFromJwt(jwt);
   const role: UserRole =
@@ -126,7 +118,11 @@ function createUserFromResponse(
   return { id, email, name, role };
 }
 
-function storeAuthResponse(response: AuthResponse, fallbackEmail?: string, fallbackName?: string): User {
+function storeAuthResponse(
+  response: AuthResponse,
+  fallbackEmail?: string,
+  fallbackName?: string,
+): User {
   const token = extractToken(response);
   if (token) localStorage.setItem(TOKEN_STORAGE_KEY, token);
   const refreshToken = extractRefreshToken(response);
@@ -184,9 +180,7 @@ export const authService = {
     const refreshToken = this.getRefreshToken();
 
     if (accessToken && refreshToken) {
-      await apiClient
-        .post("/api/v1/auth/logout", { accessToken, refreshToken })
-        .catch(() => { });
+      await apiClient.post("/api/v1/auth/logout", { accessToken, refreshToken }).catch(() => {});
     }
 
     localStorage.removeItem(USER_STORAGE_KEY);

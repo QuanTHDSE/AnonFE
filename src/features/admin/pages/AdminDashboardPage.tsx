@@ -56,8 +56,8 @@ export function AdminDashboardView() {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Dashboard</h1>
         <p className="text-gray-500 font-medium mt-1">
-          Xin chào, <span className="text-[#F15B29] font-bold">{user?.name}</span>. Đây là tổng
-          quan hệ thống.
+          Xin chào, <span className="text-[#F15B29] font-bold">{user?.name}</span>. Đây là tổng quan
+          hệ thống.
         </p>
       </motion.div>
 

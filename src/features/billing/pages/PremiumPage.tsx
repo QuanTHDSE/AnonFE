@@ -39,7 +39,9 @@ export function PremiumView() {
                       {user?.name?.slice(0, 2).toUpperCase() ?? "AN"}
                     </span>
                   </div>
-                  <span className="font-medium text-sm hidden sm:block">{user?.name ?? "User"}</span>
+                  <span className="font-medium text-sm hidden sm:block">
+                    {user?.name ?? "User"}
+                  </span>
                 </div>
                 <button
                   onClick={logout}

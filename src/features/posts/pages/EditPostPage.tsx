@@ -140,7 +140,9 @@ export function EditPostView() {
             <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
             <span className="font-bold hidden sm:block">Quay lại</span>
           </button>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Chỉnh sửa bài viết</h1>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+            Chỉnh sửa bài viết
+          </h1>
           <div className="w-24" />
         </header>
 
@@ -158,7 +160,10 @@ export function EditPostView() {
           <div className="flex flex-col items-center py-20 gap-4 text-red-500">
             <AlertCircle size={40} />
             <p className="font-bold">{fetchError}</p>
-            <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-[#F15B29] font-bold">
+            <button
+              onClick={() => navigate(-1)}
+              className="text-gray-500 hover:text-[#F15B29] font-bold"
+            >
               Quay lại
             </button>
           </div>
@@ -199,7 +204,6 @@ export function EditPostView() {
               className="bg-white rounded-3xl border border-gray-100 shadow-xl shadow-orange-100/10 overflow-hidden"
             >
               <form onSubmit={handleSubmit} className="p-6 md:p-10 space-y-8">
-
                 {/* Existing images */}
                 {(existingImages.length > 0 || newImagePreviews.length > 0) && (
                   <div className="space-y-3">
@@ -254,7 +258,10 @@ export function EditPostView() {
                     className="w-full h-32 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 hover:bg-orange-50/30 hover:border-[#F15B29]/40 transition-colors cursor-pointer group"
                   >
                     <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mb-2 group-hover:scale-110 transition-transform">
-                      <ImageIcon size={20} className="text-gray-400 group-hover:text-[#F15B29] transition-colors" />
+                      <ImageIcon
+                        size={20}
+                        className="text-gray-400 group-hover:text-[#F15B29] transition-colors"
+                      />
                     </div>
                     <p className="font-bold text-gray-500 text-sm">Thêm ảnh mới</p>
                   </div>
