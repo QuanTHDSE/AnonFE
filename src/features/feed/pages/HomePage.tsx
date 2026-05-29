@@ -31,95 +31,99 @@ function formatRelativeTime(dateStr: string): string {
   return `${Math.floor(days / 7)}w`;
 }
 
-const PostCard = ({ post }: { post: FeedPostItem }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow mb-8 max-w-[700px] w-full"
-  >
-    {/* Post Header */}
-    <div className="flex items-center justify-between p-6">
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-          {post.author.avatar ? (
-            <img src={post.author.avatar} alt={post.author.name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="text-gray-400">
-              <Users size={24} />
-            </div>
-          )}
+const PostCard = ({ post }: { post: FeedPostItem }) => {
+  const images = post.images ?? [];
+  const tags = post.tags ?? [];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow mb-8 max-w-[700px] w-full"
+    >
+      {/* Post Header */}
+      <div className="flex items-center justify-between p-6">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+            {post.author?.avatar ? (
+              <img src={post.author.avatar} alt={post.author.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-gray-400">
+                <Users size={24} />
+              </div>
+            )}
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">
+              {post.isAnonymous ? "Ẩn danh" : (post.author?.name ?? "Ẩn danh")}
+            </h3>
+            <p className="text-xs text-gray-500 font-medium">{formatRelativeTime(post.createdAt)}</p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-semibold text-gray-900">
-            {post.isAnonymous ? "Ẩn danh" : post.author.name}
-          </h3>
-          <p className="text-xs text-gray-500 font-medium">{formatRelativeTime(post.createdAt)}</p>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
+            {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
+          </span>
+          <button className="text-gray-400 hover:text-[#F15B29] transition-colors">
+            <Bookmark size={20} />
+          </button>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
-          {post.subject.iconEmoji} {post.subject.name}
-        </span>
-        <button className="text-gray-400 hover:text-[#F15B29] transition-colors">
-          <Bookmark size={20} />
-        </button>
-      </div>
-    </div>
 
-    {/* Post Image */}
-    {post.images.length > 0 && (
-      <Link to={`/posts/${post.id}`} className="block px-6 pb-4">
-        <div className="relative aspect-square rounded-[24px] overflow-hidden bg-gray-50">
-          <ImageWithFallback
-            src={post.images[0]}
-            alt={post.title}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-          />
-          {post.images.length > 1 && (
-            <span className="absolute bottom-3 right-3 text-xs font-bold bg-black/50 text-white px-2 py-1 rounded-full">
-              +{post.images.length - 1}
-            </span>
-          )}
-        </div>
-      </Link>
-    )}
-
-    {/* Post Body */}
-    <div className="px-6 pb-6">
-      <Link to={`/posts/${post.id}`} className="block group">
-        <h4 className="font-bold text-gray-900 mb-1 group-hover:text-[#F15B29] transition-colors">{post.title}</h4>
-        <p className="text-gray-600 font-medium text-sm mb-3 line-clamp-3">{post.content}</p>
-      </Link>
-      {post.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {post.tags.map((tag) => (
-            <span
-              key={tag}
-              className="text-[#F15B29] font-semibold text-sm hover:underline cursor-pointer"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
+      {/* Post Image */}
+      {images.length > 0 && (
+        <Link to={`/posts/${post.id}`} className="block px-6 pb-4">
+          <div className="relative aspect-square rounded-[24px] overflow-hidden bg-gray-50">
+            <ImageWithFallback
+              src={images[0]}
+              alt={post.title}
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            />
+            {images.length > 1 && (
+              <span className="absolute bottom-3 right-3 text-xs font-bold bg-black/50 text-white px-2 py-1 rounded-full">
+                +{images.length - 1}
+              </span>
+            )}
+          </div>
+        </Link>
       )}
 
-      {/* Post Actions */}
-      <div className="flex items-center pt-4 border-t border-gray-100 gap-6">
-        <button className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition-colors group">
-          <Heart size={20} className="group-hover:fill-red-500" />
-          <span className="text-sm font-semibold">{post.likesCount}</span>
-        </button>
-        <button className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors">
-          <MessageSquare size={20} />
-          <span className="text-sm font-semibold">{post.commentsCount}</span>
-        </button>
-        <button className="text-gray-500 hover:text-green-500 transition-colors">
-          <Share2 size={20} />
-        </button>
+      {/* Post Body */}
+      <div className="px-6 pb-6">
+        <Link to={`/posts/${post.id}`} className="block group">
+          <h4 className="font-bold text-gray-900 mb-1 group-hover:text-[#F15B29] transition-colors">{post.title}</h4>
+          <p className="text-gray-600 font-medium text-sm mb-3 line-clamp-3">{post.content}</p>
+        </Link>
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[#F15B29] font-semibold text-sm hover:underline cursor-pointer"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Post Actions */}
+        <div className="flex items-center pt-4 border-t border-gray-100 gap-6">
+          <button className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition-colors group">
+            <Heart size={20} className="group-hover:fill-red-500" />
+            <span className="text-sm font-semibold">{post.likesCount}</span>
+          </button>
+          <button className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors">
+            <MessageSquare size={20} />
+            <span className="text-sm font-semibold">{post.commentsCount}</span>
+          </button>
+          <button className="text-gray-500 hover:text-green-500 transition-colors">
+            <Share2 size={20} />
+          </button>
+        </div>
       </div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 const PAGE_SIZE = 10;
 

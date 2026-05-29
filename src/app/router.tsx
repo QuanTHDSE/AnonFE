@@ -1,4 +1,5 @@
 import { createBrowserRouter, type RouteObject } from "react-router";
+import { AdminRoute } from "./AdminRoute";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { RootLayout } from "./RootLayout";
 import { SignInView } from "@/features/auth/pages/SignInPage";
@@ -14,6 +15,11 @@ import { CreatePostView } from "@/features/posts/pages/CreatePostPage";
 import { EditPostView } from "@/features/posts/pages/EditPostPage";
 import { PostDetailView } from "@/features/posts/pages/PostDetailPage";
 import { FollowingView } from "@/features/social/pages/FollowingPage";
+import { ProfileView } from "@/features/profile/pages/ProfilePage";
+import { AdminLayout } from "@/features/admin/components/AdminLayout";
+import { AdminDashboardView } from "@/features/admin/pages/AdminDashboardPage";
+import { AdminPostsView } from "@/features/admin/pages/AdminPostsPage";
+import { AdminSubjectsView } from "@/features/admin/pages/AdminSubjectsPage";
 
 export const appRoutes: RouteObject[] = [
   {
@@ -72,8 +78,35 @@ export const appRoutes: RouteObject[] = [
             Component: FollowingView,
           },
           {
+            path: "profile",
+            Component: ProfileView,
+          },
+          {
             path: "checkout",
             Component: CheckoutView,
+          },
+        ],
+      },
+      {
+        Component: AdminRoute,
+        children: [
+          {
+            path: "admin",
+            Component: AdminLayout,
+            children: [
+              {
+                index: true,
+                Component: AdminDashboardView,
+              },
+              {
+                path: "posts",
+                Component: AdminPostsView,
+              },
+              {
+                path: "subjects",
+                Component: AdminSubjectsView,
+              },
+            ],
           },
         ],
       },

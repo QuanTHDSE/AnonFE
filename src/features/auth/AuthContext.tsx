@@ -4,6 +4,7 @@ import type { User } from "@/types";
 
 interface AuthContextType {
   isLoggedIn: boolean;
+  isAdmin: boolean;
   user: User | null;
   userEmail: string | null;
   login: (payload: LoginPayload) => Promise<void>;
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
   const isLoggedIn = Boolean(user);
+  const isAdmin = user?.role === "admin";
   const userEmail = user?.email ?? null;
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, user, userEmail, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ isLoggedIn, isAdmin, user, userEmail, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

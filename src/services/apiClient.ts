@@ -5,7 +5,9 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return token && token !== "undefined" && token !== "null"
+    ? { Authorization: `Bearer ${token}` }
+    : {};
 }
 
 async function tryRefreshToken(): Promise<boolean> {
@@ -20,12 +22,19 @@ async function tryRefreshToken(): Promise<boolean> {
 
   if (!res.ok) return false;
 
-  const data = (await res.json()) as { token?: string; refreshToken?: string };
-  if (!data.token) return false;
+  const data = (await res.json()) as {
+    token?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    refresh_token?: string;
+  };
+  const newToken = data.token ?? data.accessToken;
+  if (!newToken) return false;
 
-  localStorage.setItem(TOKEN_STORAGE_KEY, data.token);
-  if (data.refreshToken) {
-    localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, data.refreshToken);
+  localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
+  const newRefreshToken = data.refreshToken ?? data.refresh_token;
+  if (newRefreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, newRefreshToken);
   }
   return true;
 }
@@ -34,9 +43,16 @@ async function extractErrorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => ({})) as {
     message?: string | string[];
     error?: string;
+    title?: string;
+    errors?: Record<string, string[]>;
   };
+  // ASP.NET Core ModelState validation errors
+  if (body.errors && typeof body.errors === "object") {
+    const msgs = Object.values(body.errors).flat();
+    if (msgs.length > 0) return msgs.join(", ");
+  }
   if (Array.isArray(body.message)) return body.message.join(", ");
-  return body.message ?? body.error ?? `HTTP ${res.status}`;
+  return body.message ?? body.error ?? body.title ?? `HTTP ${res.status}`;
 }
 
 async function request<T>(path: string, options?: RequestInit, skipRefresh = false): Promise<T> {
@@ -73,8 +89,15 @@ async function request<T>(path: string, options?: RequestInit, skipRefresh = fal
     throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
   }
 
+  if (res.status === 403) {
+    throw new Error("Không có quyền thực hiện thao tác này. Tài khoản cần được cấp quyền Admin.");
+  }
   if (!res.ok) {
     throw new Error(await extractErrorMessage(res));
+  }
+  const contentType = res.headers.get("content-type");
+  if (res.status === 204 || !contentType || !contentType.includes("application/json")) {
+    return undefined as unknown as T;
   }
   return res.json() as Promise<T>;
 }
@@ -85,6 +108,9 @@ export const apiClient = {
   },
   post<T>(path: string, body: unknown): Promise<T> {
     return request<T>(path, { method: "POST", body: JSON.stringify(body) });
+  },
+  postForm<T>(path: string, body: FormData): Promise<T> {
+    return request<T>(path, { method: "POST", body });
   },
   put<T>(path: string, body: unknown): Promise<T> {
     return request<T>(path, { method: "PUT", body: JSON.stringify(body) });

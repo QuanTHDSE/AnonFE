@@ -6,7 +6,9 @@ import {
   type LucideIcon,
   Plus,
   Settings,
+  Shield,
   TrendingUp,
+  UserRound,
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -20,7 +22,8 @@ export type AppSidebarItem =
   | "leaderboard"
   | "following"
   | "premium"
-  | "bookmarks";
+  | "bookmarks"
+  | "profile";
 
 interface SidebarItemProps {
   icon: LucideIcon;
@@ -47,7 +50,7 @@ function SidebarItem({ icon: Icon, active = false, onClick }: SidebarItemProps) 
 
 export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isAdmin } = useAuth();
   const goProtected = (path: string) => navigate(isLoggedIn ? path : "/signin");
 
   return (
@@ -86,19 +89,37 @@ export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
           onClick={() => goProtected("/bookmarks")}
         />
         {isLoggedIn && (
-          <motion.div
-            whileHover={{ scale: 1.1, rotate: 90 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/create")}
-            className="p-3 my-2 rounded-full cursor-pointer transition-all bg-[#F15B29] text-white shadow-lg shadow-orange-200 hover:shadow-[#F15B29]/40 flex items-center justify-center"
-            title="Đăng bài"
-          >
-            <Plus size={24} strokeWidth={3} />
-          </motion.div>
+          <>
+            <SidebarItem
+              icon={UserRound}
+              active={activeItem === "profile"}
+              onClick={() => navigate("/profile")}
+            />
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 90 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate("/create")}
+              className="p-3 my-2 rounded-full cursor-pointer transition-all bg-[#F15B29] text-white shadow-lg shadow-orange-200 hover:shadow-[#F15B29]/40 flex items-center justify-center"
+              title="Đăng bài"
+            >
+              <Plus size={24} strokeWidth={3} />
+            </motion.div>
+          </>
         )}
       </nav>
 
-      <div className="mt-auto">
+      <div className="mt-auto flex flex-col gap-3">
+        {isAdmin && (
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/admin")}
+            className="p-3 rounded-2xl cursor-pointer transition-colors bg-gray-900 text-white hover:bg-gray-700"
+            title="Admin Panel"
+          >
+            <Shield size={24} strokeWidth={2.5} />
+          </motion.div>
+        )}
         <SidebarItem icon={Settings} />
       </div>
     </aside>

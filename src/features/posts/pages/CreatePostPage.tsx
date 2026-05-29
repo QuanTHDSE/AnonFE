@@ -19,15 +19,6 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
 import type { Subject } from "@/types";
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
 export function CreatePostView() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
@@ -41,14 +32,14 @@ export function CreatePostView() {
   const [tagInput, setTagInput] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [imageBase64s, setImageBase64s] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    void postService.getSubjects().then(setSubjects);
+    void postService.getSubjects({ pageSize: 100 }).then((res) => setSubjects(res.subjects));
   }, []);
 
   const handleAddTag = () => {
@@ -70,33 +61,22 @@ export function CreatePostView() {
     setTags((prev) => prev.filter((t) => t !== tag));
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-
-    const newPreviews: string[] = [];
-    const newBase64s: string[] = [];
-
-    for (const file of files) {
-      const b64 = await fileToBase64(file);
-      newPreviews.push(URL.createObjectURL(file));
-      newBase64s.push(b64);
-    }
-
-    setImagePreviews((prev) => [...prev, ...newPreviews]);
-    setImageBase64s((prev) => [...prev, ...newBase64s]);
-
+    setImagePreviews((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
+    setImageFiles((prev) => [...prev, ...files]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleRemoveImage = (index: number) => {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
-    setImageBase64s((prev) => prev.filter((_, i) => i !== index));
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !content || !subjectId) return;
+    if (!title.trim() || title.trim().length < 5 || !content.trim() || content.trim().length < 10 || !subjectId) return;
 
     setIsLoading(true);
     setSubmitStatus("idle");
@@ -109,7 +89,7 @@ export function CreatePostView() {
         subjectId,
         tags: tags.length > 0 ? tags : undefined,
         isAnonymous,
-        images: imageBase64s.length > 0 ? imageBase64s : undefined,
+        images: imageFiles.length > 0 ? imageFiles : undefined,
       });
       setSubmitStatus("success");
       setTimeout(() => navigate("/"), 1500);
@@ -123,7 +103,8 @@ export function CreatePostView() {
 
   if (!isLoggedIn) return null;
 
-  const canSubmit = title.trim() && content.trim() && subjectId && !isLoading;
+  const canSubmit =
+    title.trim().length >= 5 && content.trim().length >= 10 && subjectId && !isLoading;
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex text-gray-900 font-sans selection:bg-orange-100 selection:text-[#F15B29]">
@@ -237,6 +218,9 @@ export function CreatePostView() {
                   className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-bold text-lg text-gray-900 placeholder:font-medium"
                   required
                 />
+                <p className={`text-xs ml-1 font-medium ${title.trim().length > 0 && title.trim().length < 5 ? "text-red-400" : "text-gray-400"}`}>
+                  {title.trim().length}/255 ký tự (tối thiểu 5)
+                </p>
               </div>
 
               {/* Content */}
@@ -253,6 +237,9 @@ export function CreatePostView() {
                   className="w-full px-5 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium text-gray-700 resize-none"
                   required
                 />
+                <p className={`text-xs ml-1 font-medium ${content.trim().length > 0 && content.trim().length < 10 ? "text-red-400" : "text-gray-400"}`}>
+                  {content.trim().length} ký tự (tối thiểu 10)
+                </p>
               </div>
 
               {/* Subject / Chuyên ngành */}
@@ -273,11 +260,10 @@ export function CreatePostView() {
                         key={sub.id}
                         type="button"
                         onClick={() => setSubjectId(sub.id)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${
-                          subjectId === sub.id
-                            ? "bg-[#F15B29] border-[#F15B29] text-white shadow-md shadow-orange-200"
-                            : "bg-white border-gray-200 text-gray-600 hover:border-[#F15B29] hover:text-[#F15B29]"
-                        }`}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all border ${subjectId === sub.id
+                          ? "bg-[#F15B29] border-[#F15B29] text-white shadow-md shadow-orange-200"
+                          : "bg-white border-gray-200 text-gray-600 hover:border-[#F15B29] hover:text-[#F15B29]"
+                          }`}
                       >
                         <span>{sub.iconEmoji}</span>
                         {sub.name}
@@ -338,11 +324,10 @@ export function CreatePostView() {
               <div className="flex items-center justify-between p-5 bg-gray-50/80 rounded-2xl border border-gray-100">
                 <div className="flex items-center gap-4">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-sm border ${
-                      isAnonymous
-                        ? "bg-orange-100 text-[#F15B29] border-orange-200"
-                        : "bg-white text-gray-400 border-gray-200"
-                    }`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors shadow-sm border ${isAnonymous
+                      ? "bg-orange-100 text-[#F15B29] border-orange-200"
+                      : "bg-white text-gray-400 border-gray-200"
+                      }`}
                   >
                     <EyeOff size={20} />
                   </div>
@@ -356,14 +341,12 @@ export function CreatePostView() {
                 <button
                   type="button"
                   onClick={() => setIsAnonymous(!isAnonymous)}
-                  className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#F15B29]/20 focus:ring-offset-2 shrink-0 ${
-                    isAnonymous ? "bg-[#F15B29]" : "bg-gray-300"
-                  }`}
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#F15B29]/20 focus:ring-offset-2 shrink-0 ${isAnonymous ? "bg-[#F15B29]" : "bg-gray-300"
+                    }`}
                 >
                   <span
-                    className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${
-                      isAnonymous ? "translate-x-6" : "translate-x-0"
-                    }`}
+                    className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${isAnonymous ? "translate-x-6" : "translate-x-0"
+                      }`}
                   />
                 </button>
               </div>

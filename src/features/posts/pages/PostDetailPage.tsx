@@ -115,25 +115,28 @@ export function PostDetailView() {
         )}
 
         {/* Post content */}
-        {!isLoading && post && (
+        {!isLoading && post && (() => {
+          const images = post.images ?? [];
+          const tags = post.tags ?? [];
+          return (
           <motion.article
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             className="pb-20"
           >
             {/* Image gallery */}
-            {post.images.length > 0 && (
+            {images.length > 0 && (
               <div className="mb-8">
                 <div className="rounded-3xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
                   <ImageWithFallback
-                    src={post.images[selectedImage]}
+                    src={images[selectedImage]}
                     alt={post.title}
                     className="w-full max-h-[560px] object-contain"
                   />
                 </div>
-                {post.images.length > 1 && (
+                {images.length > 1 && (
                   <div className="flex gap-3 mt-3 overflow-x-auto pb-1">
-                    {post.images.map((src, idx) => (
+                    {images.map((src, idx) => (
                       <button
                         key={idx}
                         onClick={() => setSelectedImage(idx)}
@@ -157,7 +160,7 @@ export function PostDetailView() {
               <div className="flex items-start justify-between mb-6 gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-                    {post.author.avatar ? (
+                    {post.author?.avatar ? (
                       <img src={post.author.avatar} alt={post.author.name} className="w-full h-full object-cover" />
                     ) : (
                       <Users size={24} className="text-gray-400" />
@@ -165,7 +168,7 @@ export function PostDetailView() {
                   </div>
                   <div>
                     <p className="font-bold text-gray-900">
-                      {post.isAnonymous ? "Ẩn danh" : post.author.name}
+                      {post.isAnonymous ? "Ẩn danh" : (post.author?.name ?? "Ẩn danh")}
                     </p>
                     <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mt-0.5">
                       <Calendar size={12} />
@@ -175,9 +178,9 @@ export function PostDetailView() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-sm font-bold px-3 py-1.5 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
-                    {post.subject.iconEmoji} {post.subject.name}
+                    {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
                   </span>
-                  {user?.name === post.author.name && !post.isAnonymous && (
+                  {user?.name === post.author?.name && !post.isAnonymous && (
                     <>
                       <button
                         onClick={() => navigate(`/posts/${post.id}/edit`)}
@@ -212,9 +215,9 @@ export function PostDetailView() {
               </p>
 
               {/* Tags */}
-              {post.tags.length > 0 && (
+              {tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-8">
-                  {post.tags.map((tag) => (
+                  {tags.map((tag) => (
                     <span
                       key={tag}
                       className="px-3 py-1 bg-orange-50 border border-orange-100 text-[#F15B29] text-sm font-bold rounded-full"
@@ -242,7 +245,8 @@ export function PostDetailView() {
               </div>
             </div>
           </motion.article>
-        )}
+          );
+        })()}
       </main>
 
       {/* Delete confirmation modal */}

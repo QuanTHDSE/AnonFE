@@ -1,6 +1,10 @@
+export type UserRole = "user" | "admin";
+
 export interface User {
+  id: string;
   email: string;
   name: string;
+  role: UserRole;
 }
 
 export interface Post {
@@ -77,6 +81,26 @@ export interface Subject {
   iconEmoji: string;
 }
 
+export interface CreateSubjectPayload {
+  name: string;
+  slug: string;
+  iconEmoji: string;
+}
+
+export interface GetSubjectsParams {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PaginatedSubjectsResponse {
+  subjects: Subject[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export interface UpdatePostPayload {
   title?: string;
   content?: string;
@@ -91,22 +115,22 @@ export interface CreatePostPayload {
   subjectId: string;
   tags?: string[];
   isAnonymous?: boolean;
-  images?: string[];
+  images?: File[];
 }
 
 export interface FeedPostItem {
   id: string;
   title: string;
   content: string;
-  images: string[];
-  tags: string[];
+  images?: string[] | null;
+  tags?: string[] | null;
   isAnonymous: boolean;
-  subject: Subject;
-  author: {
+  subject?: Subject | null;
+  author?: {
     id: string;
     name: string;
     avatar?: string;
-  };
+  } | null;
   createdAt: string;
   likesCount: number;
   commentsCount: number;
