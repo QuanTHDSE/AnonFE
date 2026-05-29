@@ -1,8 +1,15 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appRoutes } from "./router";
 import { USER_STORAGE_KEY } from "@/services/authService";
+
+function jsonResponse(body: unknown) {
+  return new Response(JSON.stringify(body), {
+    headers: { "Content-Type": "application/json" },
+    status: 200,
+  });
+}
 
 function renderRoute(path: string) {
   const router = createMemoryRouter(appRoutes, {
@@ -15,6 +22,24 @@ function renderRoute(path: string) {
 describe("app router", () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.restoreAllMocks();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/api/v1/posts")) {
+          return jsonResponse({
+            posts: [],
+            total: 0,
+            page: 1,
+            pageSize: 10,
+            totalPages: 1,
+          });
+        }
+
+        return jsonResponse({});
+      }),
+    );
   });
 
   it("redirects protected routes to sign in when logged out", async () => {
