@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
+import { followService, type FollowStats } from "@/services/followService";
 import { postService } from "@/services/postService";
 import { userService, type UserProfile } from "@/services/userService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
@@ -144,6 +145,7 @@ export function ProfileView() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<FeedPostItem[]>([]);
+  const [followStats, setFollowStats] = useState<FollowStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -152,10 +154,15 @@ export function ProfileView() {
   useEffect(() => {
     if (!user) return;
     setIsLoading(true);
-    Promise.all([userService.getMe(), postService.getPosts({ pageSize: 100 })])
-      .then(([prof, postsRes]) => {
+    Promise.all([
+      userService.getMe(),
+      postService.getPosts({ authorId: user.id, pageSize: 100 }),
+      followService.getStats(user.id),
+    ])
+      .then(([prof, postsRes, stats]) => {
         setProfile(prof);
-        setPosts(postsRes.posts.filter((p) => !p.isAnonymous && p.author?.id === user.id));
+        setPosts(postsRes.posts.filter((p) => !p.isAnonymous));
+        setFollowStats(stats);
       })
       .finally(() => setIsLoading(false));
   }, [user]);
@@ -248,6 +255,20 @@ export function ProfileView() {
                     <div className="flex items-center gap-1.5 font-bold text-gray-700">
                       <FileText size={14} className="text-[#F15B29]" />
                       {posts.length} bài viết công khai
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3 text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#F15B29] font-extrabold text-base">
+                        {followStats?.followerCount ?? 0}
+                      </span>
+                      <span className="text-gray-500 font-medium">người theo dõi</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#F15B29] font-extrabold text-base">
+                        {followStats?.followingCount ?? 0}
+                      </span>
+                      <span className="text-gray-500 font-medium">đang theo dõi</span>
                     </div>
                   </div>
                 </>

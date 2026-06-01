@@ -15,6 +15,7 @@ import { CreatePostView } from "@/features/posts/pages/CreatePostPage";
 import { EditPostView } from "@/features/posts/pages/EditPostPage";
 import { PostDetailView } from "@/features/posts/pages/PostDetailPage";
 import { FollowingView } from "@/features/social/pages/FollowingPage";
+import { UserProfileView } from "@/features/social/pages/UserProfilePage";
 import { ProfileView } from "@/features/profile/pages/ProfilePage";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminDashboardView } from "@/features/admin/pages/AdminDashboardPage";
@@ -41,6 +42,10 @@ export const appRoutes: RouteObject[] = [
       {
         path: "posts/:id",
         Component: PostDetailView,
+      },
+      {
+        path: "users/:id",
+        Component: UserProfileView,
       },
       {
         path: "leaderboard",

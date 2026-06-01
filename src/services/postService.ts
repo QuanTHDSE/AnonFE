@@ -15,6 +15,7 @@ export interface GetPostsParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  authorId?: string;
 }
 
 interface RawPostItem {
@@ -22,15 +23,16 @@ interface RawPostItem {
   title: string;
   content: string;
   authorId: string;
-  authorUsername: string;
-  authorAnonAlias?: string;
+  authorUsername?: string | null;
+  authorAnonAlias?: string | null;
   isAnonymous: boolean;
-  subjectId: string;
-  subjectName: string;
+  subjectId?: string | null;
+  subjectName?: string | null;
   imageUrls?: string[] | null;
   tags?: string[] | null;
   upvotes?: number;
   commentsCount?: number;
+  status?: string;
   createdAt: string;
 }
 
@@ -42,7 +44,8 @@ interface RawPaginatedPostsResponse {
   totalPages: number;
 }
 
-function mapPost(raw: RawPostItem): FeedPostItem {
+function mapPost(raw: RawPostItem, usernameMap: Record<string, string> = {}): FeedPostItem {
+  const resolvedName = raw.authorUsername || usernameMap[raw.authorId];
   return {
     id: raw.id,
     title: raw.title,
@@ -50,10 +53,13 @@ function mapPost(raw: RawPostItem): FeedPostItem {
     isAnonymous: raw.isAnonymous,
     images: raw.imageUrls ?? [],
     tags: raw.tags ?? [],
-    subject: raw.subjectId
-      ? { id: raw.subjectId, name: raw.subjectName, slug: "", iconEmoji: "" }
-      : null,
-    author: raw.isAnonymous ? null : { id: raw.authorId, name: raw.authorUsername },
+    subject:
+      raw.subjectId && raw.subjectName
+        ? { id: raw.subjectId, name: raw.subjectName, slug: "", iconEmoji: "" }
+        : null,
+    author: raw.isAnonymous
+      ? null
+      : { id: raw.authorId, name: resolvedName || "Người dùng" },
     createdAt: raw.createdAt,
     likesCount: raw.upvotes ?? 0,
     commentsCount: raw.commentsCount ?? 0,
@@ -80,12 +86,13 @@ export const postService = {
     if (params.search) query.set("search", params.search);
     if (params.page) query.set("page", String(params.page));
     if (params.pageSize) query.set("pageSize", String(params.pageSize));
+    if (params.authorId) query.set("authorId", params.authorId);
     const qs = query.toString();
     const raw = await apiClient.get<RawPaginatedPostsResponse>(
       `/api/v1/posts${qs ? `?${qs}` : ""}`,
     );
     return {
-      posts: raw.posts.map(mapPost),
+      posts: raw.posts.filter((p) => p.status !== "removed").map(mapPost),
       total: raw.total,
       page: raw.page,
       pageSize: raw.pageSize,

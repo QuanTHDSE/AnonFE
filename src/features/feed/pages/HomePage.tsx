@@ -57,9 +57,16 @@ const PostCard = ({ post }: { post: FeedPostItem }) => {
             )}
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">
-              {post.isAnonymous ? "Ẩn danh" : (post.author?.name ?? "Ẩn danh")}
-            </h3>
+            {post.isAnonymous || !post.author ? (
+              <h3 className="font-semibold text-gray-900">Ẩn danh</h3>
+            ) : (
+              <Link
+                to={`/users/${post.author.id}`}
+                className="font-semibold text-gray-900 hover:text-[#F15B29] transition-colors block"
+              >
+                {post.author.name}
+              </Link>
+            )}
             <p className="text-xs text-gray-500 font-medium">
               {formatRelativeTime(post.createdAt)}
             </p>

@@ -15,4 +15,8 @@ export const userService = {
   async getMe(): Promise<UserProfile> {
     return apiClient.get<UserProfile>("/api/v1/users/me");
   },
+
+  async getUserById(id: string): Promise<UserProfile> {
+    return apiClient.get<UserProfile>(`/api/v1/users/${id}`);
+  },
 };
