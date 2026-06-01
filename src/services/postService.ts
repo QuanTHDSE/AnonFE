@@ -57,9 +57,7 @@ function mapPost(raw: RawPostItem, usernameMap: Record<string, string> = {}): Fe
       raw.subjectId && raw.subjectName
         ? { id: raw.subjectId, name: raw.subjectName, slug: "", iconEmoji: "" }
         : null,
-    author: raw.isAnonymous
-      ? null
-      : { id: raw.authorId, name: resolvedName || "Người dùng" },
+    author: raw.isAnonymous ? null : { id: raw.authorId, name: resolvedName || "Người dùng" },
     createdAt: raw.createdAt,
     likesCount: raw.upvotes ?? 0,
     commentsCount: raw.commentsCount ?? 0,
@@ -92,7 +90,7 @@ export const postService = {
       `/api/v1/posts${qs ? `?${qs}` : ""}`,
     );
     return {
-      posts: raw.posts.filter((p) => p.status !== "removed").map(mapPost),
+      posts: raw.posts.filter((p) => p.status !== "removed").map((post) => mapPost(post)),
       total: raw.total,
       page: raw.page,
       pageSize: raw.pageSize,

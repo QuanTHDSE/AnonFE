@@ -37,8 +37,7 @@ export function FollowingView() {
   };
 
   const filtered = followingList.filter(
-    (u) =>
-      !searchQuery.trim() || u.username.toLowerCase().includes(searchQuery.toLowerCase()),
+    (u) => !searchQuery.trim() || u.username.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -49,9 +48,7 @@ export function FollowingView() {
         {/* Header */}
         <div className="mb-10">
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Following</h1>
-          <p className="text-[#F15B29] font-semibold text-sm mt-1">
-            Những người bạn đang theo dõi
-          </p>
+          <p className="text-[#F15B29] font-semibold text-sm mt-1">Những người bạn đang theo dõi</p>
         </div>
 
         {/* Search */}
@@ -120,7 +117,11 @@ export function FollowingView() {
                       onClick={() => navigate(`/users/${u.id}`)}
                     >
                       {u.avatarUrl ? (
-                        <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
+                        <img
+                          src={u.avatarUrl}
+                          alt={u.username}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
                           <span className="text-xl font-extrabold text-[#F15B29]">{initials}</span>

@@ -55,14 +55,22 @@ export const followService = {
     return apiClient.get<boolean>(`/api/v1/follows/is-following/${followingId}`);
   },
 
-  async getFollowers(userId: string, page = 1, pageSize = 20): Promise<PaginatedFollowUsersResponse> {
+  async getFollowers(
+    userId: string,
+    page = 1,
+    pageSize = 20,
+  ): Promise<PaginatedFollowUsersResponse> {
     const raw = await apiClient.get<RawFollowListResponse>(
       `/api/v1/follows/followers/${userId}?page=${page}&pageSize=${pageSize}`,
     );
     return { ...raw, data: raw.data.map((item) => item.follower) };
   },
 
-  async getFollowing(userId: string, page = 1, pageSize = 20): Promise<PaginatedFollowUsersResponse> {
+  async getFollowing(
+    userId: string,
+    page = 1,
+    pageSize = 20,
+  ): Promise<PaginatedFollowUsersResponse> {
     const raw = await apiClient.get<RawFollowListResponse>(
       `/api/v1/follows/following/${userId}?page=${page}&pageSize=${pageSize}`,
     );
