@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { appRoutes } from "./router";
@@ -16,7 +17,11 @@ function renderRoute(path: string) {
     initialEntries: [path],
   });
 
-  return render(<RouterProvider router={router} />);
+  return render(
+    <GoogleOAuthProvider clientId="test-google-client-id">
+      <RouterProvider router={router} />
+    </GoogleOAuthProvider>,
+  );
 }
 
 describe("app router", () => {

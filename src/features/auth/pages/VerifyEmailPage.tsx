@@ -4,11 +4,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { ArrowLeft, Mail, RefreshCw } from "lucide-react";
 import Vector from "@/imports/Vector";
 import { authService } from "@/services/authService";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/shared/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/shared/components/ui/input-otp";
 
 export function VerifyEmailView() {
   const navigate = useNavigate();
@@ -41,12 +37,14 @@ export function VerifyEmailView() {
     setResendMsg("");
     setError("");
     try {
-      await authService.register({
-        username: "",
-        email,
-        password: "",
-        anonAlias: "",
-      }).catch(() => {});
+      await authService
+        .register({
+          username: "",
+          email,
+          password: "",
+          anonAlias: "",
+        })
+        .catch(() => {});
       setResendMsg("Đã gửi lại mã xác minh vào email của bạn.");
     } finally {
       setIsResending(false);
@@ -99,11 +97,7 @@ export function VerifyEmailView() {
             )}
 
             <div className="flex justify-center">
-              <InputOTP
-                maxLength={6}
-                value={otp}
-                onChange={setOtp}
-              >
+              <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                 <InputOTPGroup className="gap-2">
                   {[0, 1, 2, 3, 4, 5].map((i) => (
                     <InputOTPSlot

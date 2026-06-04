@@ -426,7 +426,9 @@ export function AdminSubjectsView() {
                     <p className="font-bold text-gray-900 text-sm">{subject.name}</p>
                     <p className="text-xs text-gray-400 font-mono truncate">{subject.slug}</p>
                     {subject.postCount !== undefined && (
-                      <p className="text-xs text-gray-400 font-medium">{subject.postCount} bài viết</p>
+                      <p className="text-xs text-gray-400 font-medium">
+                        {subject.postCount} bài viết
+                      </p>
                     )}
                   </div>
 
