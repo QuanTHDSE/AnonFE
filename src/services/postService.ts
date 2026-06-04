@@ -58,7 +58,9 @@ function mapPost(raw: RawPostItem, usernameMap: Record<string, string> = {}): Fe
       raw.subjectId && raw.subjectName
         ? { id: raw.subjectId, name: raw.subjectName, slug: "", iconEmoji: "" }
         : null,
-    author: raw.isAnonymous ? null : { id: raw.authorId, name: resolvedName || "Người dùng" },
+    author: raw.isAnonymous
+      ? { id: "", name: raw.authorAnonAlias || "Ẩn danh" }
+      : { id: raw.authorId, name: resolvedName || "Người dùng" },
     createdAt: raw.createdAt,
     likesCount: raw.upvotes ?? 0,
     commentsCount: raw.commentsCount ?? 0,

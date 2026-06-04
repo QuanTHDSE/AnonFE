@@ -22,6 +22,7 @@ import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminDashboardView } from "@/features/admin/pages/AdminDashboardPage";
 import { AdminPostsView } from "@/features/admin/pages/AdminPostsPage";
 import { AdminSubjectsView } from "@/features/admin/pages/AdminSubjectsPage";
+import { AdminUsersView } from "@/features/admin/pages/AdminUsersPage";
 
 export const appRoutes: RouteObject[] = [
   {
@@ -115,6 +116,10 @@ export const appRoutes: RouteObject[] = [
               {
                 path: "subjects",
                 Component: AdminSubjectsView,
+              },
+              {
+                path: "users",
+                Component: AdminUsersView,
               },
             ],
           },

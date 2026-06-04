@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, FileText, LayoutDashboard, LogOut, Shield } from "lucide-react";
+import { ArrowLeft, BookOpen, FileText, LayoutDashboard, LogOut, Shield, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";
@@ -14,6 +14,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Bài viết", icon: FileText, path: "/admin/posts" },
   { label: "Môn học", icon: BookOpen, path: "/admin/subjects" },
+  { label: "Người dùng", icon: Users, path: "/admin/users" },
 ];
 
 export function AdminSidebar() {

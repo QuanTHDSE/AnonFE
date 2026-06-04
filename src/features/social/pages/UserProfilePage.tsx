@@ -69,14 +69,15 @@ export function UserProfileView() {
       ? followService.getStats(id)
       : Promise.resolve<FollowStats>({ followerCount: 0, followingCount: 0, isFollowing: false });
 
+    const profileId = id;
     Promise.all([
-      userService.getUserById(id),
-      postService.getPosts({ authorId: id, pageSize: 50 }),
+      userService.getUserById(profileId),
+      postService.getPosts({ authorId: profileId, pageSize: 50 }),
       statsPromise,
     ])
       .then(([prof, postsRes, stats]) => {
         setProfile(prof);
-        setPosts(postsRes.posts.filter((p) => !p.isAnonymous && p.author?.id === id));
+        setPosts(postsRes.posts.filter((p) => !p.isAnonymous && p.author?.id === profileId));
         setFollowStats(stats);
       })
       .catch((err: unknown) =>

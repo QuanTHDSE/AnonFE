@@ -10,14 +10,23 @@ import {
   Loader2,
   MessageSquare,
   Pencil,
+  Settings,
   Trash2,
   UserRound,
   X,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 import { useAuth } from "@/features/auth/AuthContext";
 import { followService, type FollowStats } from "@/services/followService";
 import { postService } from "@/services/postService";
-import { userService, type UserProfile } from "@/services/userService";
+import { userService, type UpdateUserPayload, type UserProfile } from "@/services/userService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import type { FeedPostItem } from "@/types";
@@ -151,6 +160,11 @@ export function ProfileView() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<UpdateUserPayload>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+
   useEffect(() => {
     if (!user) return;
     setIsLoading(true);
@@ -161,11 +175,38 @@ export function ProfileView() {
     ])
       .then(([prof, postsRes, stats]) => {
         setProfile(prof);
-        setPosts(postsRes.posts.filter((p) => !p.isAnonymous));
+        setPosts(postsRes.posts.filter((p) => !p.isAnonymous && p.author?.id === user.id));
         setFollowStats(stats);
       })
       .finally(() => setIsLoading(false));
   }, [user]);
+
+  const openEdit = () => {
+    setEditForm({
+      username: profile?.username ?? "",
+      bio: profile?.bio ?? "",
+      avatarUrl: profile?.avatarUrl ?? "",
+      anonAlias: profile?.anonAlias ?? "",
+      isAnonDefault: false,
+    });
+    setEditError("");
+    setIsEditOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    setEditError("");
+    try {
+      await userService.updateMe(editForm);
+      setIsEditOpen(false);
+      const updated = await userService.getMe();
+      setProfile(updated);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Cập nhật thất bại.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!confirmDeleteId) return;
@@ -234,9 +275,18 @@ export function ProfileView() {
                 </div>
               ) : (
                 <>
-                  <h1 className="text-2xl font-extrabold text-gray-900 mb-1">
-                    {profile?.username ?? user?.name}
-                  </h1>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-1">
+                    <h1 className="text-2xl font-extrabold text-gray-900">
+                      {profile?.username ?? user?.name}
+                    </h1>
+                    <button
+                      onClick={openEdit}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-orange-50 hover:text-[#F15B29] rounded-xl transition-all border border-transparent hover:border-orange-100 shrink-0"
+                    >
+                      <Settings size={15} />
+                      Chỉnh sửa hồ sơ
+                    </button>
+                  </div>
                   <p className="text-gray-500 font-medium text-sm mb-1">
                     {profile?.email ?? user?.email}
                   </p>
@@ -422,6 +472,125 @@ export function ProfileView() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={(open) => !open && setIsEditOpen(false)}>
+        <DialogContent className="rounded-3xl border-gray-100 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-extrabold">Chỉnh sửa hồ sơ</DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium">
+              Cập nhật thông tin cá nhân của bạn
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-gray-700">Tên người dùng</label>
+              <input
+                type="text"
+                value={editForm.username ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
+                className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium"
+                placeholder="Username"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-gray-700">Bio</label>
+              <textarea
+                value={editForm.bio ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))}
+                rows={3}
+                className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium resize-none"
+                placeholder="Giới thiệu bản thân..."
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-gray-700">Avatar URL</label>
+              <input
+                type="text"
+                value={editForm.avatarUrl ?? ""}
+                onChange={(e) => setEditForm((f) => ({ ...f, avatarUrl: e.target.value }))}
+                className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium"
+                placeholder="https://..."
+              />
+              {editForm.avatarUrl && (
+                <img
+                  src={editForm.avatarUrl}
+                  alt="preview"
+                  className="mt-2 w-16 h-16 rounded-full object-cover border-2 border-orange-100"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-gray-700">Tên ẩn danh</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium select-none">
+                  ghost_
+                </span>
+                <input
+                  type="text"
+                  value={(editForm.anonAlias ?? "").replace(/^ghost_/, "")}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, anonAlias: `ghost_${e.target.value}` }))
+                  }
+                  className="w-full pl-14 pr-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium"
+                  placeholder="xxxx"
+                />
+              </div>
+              <p className="text-xs text-gray-400 font-medium ml-1">
+                Tên này hiển thị khi bạn đăng bài ẩn danh
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
+              <input
+                type="checkbox"
+                id="anonDefault"
+                checked={editForm.isAnonDefault ?? false}
+                onChange={(e) => setEditForm((f) => ({ ...f, isAnonDefault: e.target.checked }))}
+                className="w-4 h-4 accent-[#F15B29]"
+              />
+              <label htmlFor="anonDefault" className="text-sm font-medium text-gray-700 cursor-pointer">
+                Mặc định đăng ẩn danh
+              </label>
+            </div>
+
+            {editError && (
+              <p className="text-sm font-bold text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
+                {editError}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <button
+              onClick={() => setIsEditOpen(false)}
+              disabled={isSaving}
+              className="px-5 py-2.5 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
+            >
+              Huỷ
+            </button>
+            <button
+              onClick={() => void handleSaveProfile()}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-extrabold text-white bg-[#F15B29] hover:bg-[#d94a1d] rounded-xl transition-colors disabled:opacity-50 shadow-md shadow-orange-100"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  Đang lưu...
+                </>
+              ) : (
+                "Lưu thay đổi"
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
