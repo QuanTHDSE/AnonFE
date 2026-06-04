@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import Vector from "@/imports/Vector";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Ghost, Globe } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Ghost } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
 import { authService } from "@/services/authService";
 import { useAuth } from "@/features/auth/AuthContext";
 
@@ -17,23 +18,31 @@ export function RegisterView() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [googleError, setGoogleError] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
     try {
-      const res = await authService.register({ username, email, password, anonAlias });
-      if (res.token) {
-        refreshUser();
-        navigate("/");
-      } else {
-        navigate("/signin", { state: { registered: true } });
-      }
+      await authService.register({ username, email, password, anonAlias });
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đăng ký thất bại. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credential: string) => {
+    setGoogleError("");
+    const alias = anonAlias.trim() || `ghost_${Math.random().toString(36).slice(2, 6)}`;
+    try {
+      await authService.loginWithGoogle(credential, alias);
+      refreshUser();
+      navigate("/");
+    } catch (err) {
+      setGoogleError(err instanceof Error ? err.message : "Đăng nhập Google thất bại.");
     }
   };
 
@@ -175,11 +184,21 @@ export function RegisterView() {
           </div>
 
           {/* Social Logins */}
-          <div className="grid grid-cols-1 gap-4">
-            <button className="flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors font-bold text-gray-700">
-              <Globe size={20} />
-              Google
-            </button>
+          <div className="flex flex-col items-center gap-3">
+            {googleError && (
+              <p className="text-red-500 text-sm font-bold text-center">{googleError}</p>
+            )}
+            <GoogleLogin
+              onSuccess={(res) => {
+                if (res.credential) void handleGoogleSuccess(res.credential);
+              }}
+              onError={() => setGoogleError("Đăng nhập Google thất bại.")}
+              theme="outline"
+              size="large"
+              text="signup_with"
+              shape="rectangular"
+              width="368"
+            />
           </div>
 
           <p className="mt-10 text-center text-gray-500 font-medium">

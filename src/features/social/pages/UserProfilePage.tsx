@@ -76,7 +76,7 @@ export function UserProfileView() {
     ])
       .then(([prof, postsRes, stats]) => {
         setProfile(prof);
-        setPosts(postsRes.posts.filter((p) => !p.isAnonymous));
+        setPosts(postsRes.posts.filter((p) => !p.isAnonymous && p.author?.id === id));
         setFollowStats(stats);
       })
       .catch((err: unknown) =>

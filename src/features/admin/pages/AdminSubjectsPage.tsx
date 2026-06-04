@@ -7,9 +7,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Pencil,
   Plus,
   Search,
   Smile,
+  Trash2,
   X,
 } from "lucide-react";
 import { postService } from "@/services/postService";
@@ -43,6 +45,10 @@ export function AdminSubjectsView() {
   const [iconEmoji, setIconEmoji] = useState("");
   const [slugManual, setSlugManual] = useState(false);
 
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -51,10 +57,18 @@ export function AdminSubjectsView() {
     setIsLoading(true);
     postService
       .getSubjects({ search: q || undefined, page: p, pageSize: PAGE_SIZE })
-      .then((res) => {
-        setSubjects(res.subjects);
+      .then(async (res) => {
         setTotal(res.total);
         setTotalPages(res.totalPages);
+        const counts = await Promise.allSettled(
+          res.subjects.map((s) => postService.getSubjectPostCount(s.id)),
+        );
+        setSubjects(
+          res.subjects.map((s, i) => ({
+            ...s,
+            postCount: counts[i].status === "fulfilled" ? counts[i].value : 0,
+          })),
+        );
       })
       .finally(() => setIsLoading(false));
   }, []);
@@ -89,6 +103,30 @@ export function AdminSubjectsView() {
     setSlugManual(false);
     setStatus("idle");
     setErrorMsg("");
+    setEditingSubject(null);
+  };
+
+  const handleEditClick = (subject: Subject) => {
+    setEditingSubject(subject);
+    setName(subject.name);
+    setSlug(subject.slug);
+    setIconEmoji(subject.iconEmoji);
+    setSlugManual(true);
+    setStatus("idle");
+    setErrorMsg("");
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await postService.deleteSubject(id);
+      setConfirmDeleteId(null);
+      loadSubjects(search, page);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Xóa môn học thất bại.");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,18 +136,25 @@ export function AdminSubjectsView() {
     setStatus("idle");
     setErrorMsg("");
     try {
-      await postService.createSubject({
-        name: name.trim(),
-        slug: slug.trim(),
-        iconEmoji: iconEmoji.trim(),
-      });
+      const payload = { name: name.trim(), slug: slug.trim(), iconEmoji: iconEmoji.trim() };
+      if (editingSubject) {
+        await postService.updateSubject(editingSubject.id, payload);
+      } else {
+        await postService.createSubject(payload);
+      }
       setStatus("success");
-      loadSubjects(search, 1);
-      setPage(1);
+      loadSubjects(search, editingSubject ? page : 1);
+      if (!editingSubject) setPage(1);
       setTimeout(resetForm, 2000);
     } catch (err) {
       setStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Tạo môn học thất bại.");
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : editingSubject
+            ? "Cập nhật môn học thất bại."
+            : "Tạo môn học thất bại.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -130,10 +175,31 @@ export function AdminSubjectsView() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* Create Form */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-7">
-          <h2 className="text-lg font-extrabold text-gray-900 mb-6 flex items-center gap-2">
-            <Plus size={20} className="text-[#F15B29]" />
-            Tạo môn học mới
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+              {editingSubject ? (
+                <>
+                  <Pencil size={20} className="text-[#F15B29]" />
+                  Sửa: {editingSubject.name}
+                </>
+              ) : (
+                <>
+                  <Plus size={20} className="text-[#F15B29]" />
+                  Tạo môn học mới
+                </>
+              )}
+            </h2>
+            {editingSubject && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="text-sm text-gray-400 hover:text-gray-600 font-bold flex items-center gap-1 transition-colors"
+              >
+                <X size={14} />
+                Hủy
+              </button>
+            )}
+          </div>
 
           {/* Toast */}
           <AnimatePresence>
@@ -145,7 +211,7 @@ export function AdminSubjectsView() {
                 className="mb-5 flex items-center gap-2.5 p-3.5 bg-green-50 border border-green-200 text-green-700 rounded-2xl text-sm font-bold"
               >
                 <CheckCircle size={16} />
-                Tạo môn học thành công!
+                {editingSubject ? "Cập nhật môn học thành công!" : "Tạo môn học thành công!"}
               </motion.div>
             )}
             {status === "error" && (
@@ -265,7 +331,12 @@ export function AdminSubjectsView() {
               {isSubmitting ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />
-                  Đang tạo...
+                  {editingSubject ? "Đang cập nhật..." : "Đang tạo..."}
+                </>
+              ) : editingSubject ? (
+                <>
+                  <CheckCircle size={18} />
+                  Lưu thay đổi
                 </>
               ) : (
                 <>
@@ -342,7 +413,11 @@ export function AdminSubjectsView() {
                   key={subject.id}
                   initial={{ opacity: 0, x: 8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors group"
+                  className={`flex items-center gap-3 p-3 rounded-2xl transition-colors group ${
+                    editingSubject?.id === subject.id
+                      ? "bg-orange-50 border border-orange-200"
+                      : "hover:bg-gray-50"
+                  }`}
                 >
                   <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-xl shrink-0">
                     {subject.iconEmoji}
@@ -350,10 +425,50 @@ export function AdminSubjectsView() {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-gray-900 text-sm">{subject.name}</p>
                     <p className="text-xs text-gray-400 font-mono truncate">{subject.slug}</p>
+                    {subject.postCount !== undefined && (
+                      <p className="text-xs text-gray-400 font-medium">{subject.postCount} bài viết</p>
+                    )}
                   </div>
-                  <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {subject.iconEmoji} {subject.name}
-                  </span>
+
+                  {/* Actions */}
+                  {confirmDeleteId === subject.id ? (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => void handleDelete(subject.id)}
+                        disabled={deletingId === subject.id}
+                        className="text-xs font-bold px-2.5 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+                      >
+                        {deletingId === subject.id ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          "Xác nhận"
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="text-xs font-bold px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        Hủy
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <button
+                        onClick={() => handleEditClick(subject)}
+                        className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-orange-100 text-gray-400 hover:text-[#F15B29] transition-colors"
+                        title="Sửa"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(subject.id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>

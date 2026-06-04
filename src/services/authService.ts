@@ -137,6 +137,18 @@ export const authService = {
     return localStorage.getItem(TOKEN_STORAGE_KEY);
   },
 
+  async loginWithGoogle(idToken: string, anonAlias: string): Promise<User> {
+    const response = await apiClient.post<AuthResponse>("/api/v1/auth/google", {
+      idToken,
+      anonAlias,
+    });
+    return storeAuthResponse(response);
+  },
+
+  async verifyEmail(email: string, token: string): Promise<void> {
+    await apiClient.post("/api/v1/auth/verify-email", { email, token });
+  },
+
   getRefreshToken(): string | null {
     return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
   },

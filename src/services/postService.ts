@@ -9,6 +9,7 @@ import type {
   SavedPost,
   Subject,
   UpdatePostPayload,
+  UpdateSubjectPayload,
 } from "@/types";
 
 export interface GetPostsParams {
@@ -147,5 +148,24 @@ export const postService = {
 
   async createSubject(payload: CreateSubjectPayload): Promise<Subject> {
     return apiClient.post<Subject>("/api/v1/subjects", payload);
+  },
+
+  async getSubjectById(id: string): Promise<Subject> {
+    return apiClient.get<Subject>(`/api/v1/subjects/${id}`);
+  },
+
+  async updateSubject(id: string, payload: UpdateSubjectPayload): Promise<Subject> {
+    return apiClient.put<Subject>(`/api/v1/subjects/${id}`, payload);
+  },
+
+  async deleteSubject(id: string): Promise<void> {
+    await apiClient.delete(`/api/v1/subjects/${id}`);
+  },
+
+  async getSubjectPostCount(subjectId: string): Promise<number> {
+    const resp = await apiClient.get<{ posts: { status?: string }[]; total: number }>(
+      `/api/v1/subjects/${subjectId}/posts?pageSize=200`,
+    );
+    return resp.posts.filter((p) => p.status !== "removed").length;
   },
 };

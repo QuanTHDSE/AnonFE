@@ -16,6 +16,7 @@ import { EditPostView } from "@/features/posts/pages/EditPostPage";
 import { PostDetailView } from "@/features/posts/pages/PostDetailPage";
 import { FollowingView } from "@/features/social/pages/FollowingPage";
 import { UserProfileView } from "@/features/social/pages/UserProfilePage";
+import { VerifyEmailView } from "@/features/auth/pages/VerifyEmailPage";
 import { ProfileView } from "@/features/profile/pages/ProfilePage";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminDashboardView } from "@/features/admin/pages/AdminDashboardPage";
@@ -38,6 +39,10 @@ export const appRoutes: RouteObject[] = [
       {
         path: "register",
         Component: RegisterView,
+      },
+      {
+        path: "verify-email",
+        Component: VerifyEmailView,
       },
       {
         path: "posts/:id",

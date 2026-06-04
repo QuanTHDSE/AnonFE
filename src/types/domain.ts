@@ -79,9 +79,17 @@ export interface Subject {
   name: string;
   slug: string;
   iconEmoji: string;
+  postCount?: number;
+  createdAt?: string;
 }
 
 export interface CreateSubjectPayload {
+  name: string;
+  slug: string;
+  iconEmoji: string;
+}
+
+export interface UpdateSubjectPayload {
   name: string;
   slug: string;
   iconEmoji: string;

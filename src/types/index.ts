@@ -16,6 +16,7 @@ export type {
   SavedPost,
   Subject,
   UpdatePostPayload,
+  UpdateSubjectPayload,
   User,
   UserRole,
 } from "./domain";

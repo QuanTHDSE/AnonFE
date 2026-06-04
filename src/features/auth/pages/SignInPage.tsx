@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import Vector from "@/imports/Vector";
 import { useNavigate, useLocation } from "react-router";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Globe } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
+import { authService } from "@/services/authService";
 import { useAuth } from "@/features/auth/AuthContext";
 
 export function SignInView() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, refreshUser } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +20,23 @@ export function SignInView() {
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/";
   const justRegistered = (location.state as { registered?: boolean })?.registered;
+  const justVerified = (location.state as { verified?: boolean })?.verified;
+
+  const [googleError, setGoogleError] = useState("");
+
+  const handleGoogleSuccess = async (credential: string) => {
+    setGoogleError("");
+    try {
+      await authService.loginWithGoogle(
+        credential,
+        `ghost_${Math.random().toString(36).slice(2, 6)}`,
+      );
+      refreshUser();
+      navigate(from, { replace: true });
+    } catch (err) {
+      setGoogleError(err instanceof Error ? err.message : "Đăng nhập Google thất bại.");
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +83,13 @@ export function SignInView() {
 
           {/* Form */}
           <form className="space-y-6" onSubmit={handleLogin}>
-            {justRegistered && !error && (
+            {justVerified && !error && (
+              <div className="p-3 bg-green-50 text-green-600 rounded-xl text-sm font-bold text-center">
+                Email đã được xác minh! Hãy đăng nhập.
+              </div>
+            )}
+
+            {justRegistered && !error && !justVerified && (
               <div className="p-3 bg-green-50 text-green-600 rounded-xl text-sm font-bold text-center">
                 Tạo tài khoản thành công! Hãy đăng nhập.
               </div>
@@ -146,11 +171,21 @@ export function SignInView() {
           </div>
 
           {/* Social Logins */}
-          <div className="grid grid-cols-1 gap-4">
-            <button className="flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors font-bold text-gray-700">
-              <Globe size={20} />
-              Google
-            </button>
+          <div className="flex flex-col items-center gap-3">
+            {googleError && (
+              <p className="text-red-500 text-sm font-bold text-center">{googleError}</p>
+            )}
+            <GoogleLogin
+              onSuccess={(res) => {
+                if (res.credential) void handleGoogleSuccess(res.credential);
+              }}
+              onError={() => setGoogleError("Đăng nhập Google thất bại.")}
+              theme="outline"
+              size="large"
+              text="signin_with"
+              shape="rectangular"
+              width="368"
+            />
           </div>
 
           <p className="mt-10 text-center text-gray-500 font-medium">
