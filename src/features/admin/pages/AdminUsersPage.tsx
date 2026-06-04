@@ -183,18 +183,30 @@ export function AdminUsersView() {
             {isLoading
               ? Array.from({ length: PAGE_SIZE }).map((_, i) => (
                   <TableRow key={i} className="animate-pulse">
-                    <TableCell><div className="h-4 bg-gray-100 rounded w-6" /></TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-6" />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-gray-100" />
                         <div className="h-4 bg-gray-100 rounded w-28" />
                       </div>
                     </TableCell>
-                    <TableCell><div className="h-4 bg-gray-100 rounded w-40" /></TableCell>
-                    <TableCell><div className="h-4 bg-gray-100 rounded w-24" /></TableCell>
-                    <TableCell><div className="h-5 bg-gray-100 rounded-full w-14" /></TableCell>
-                    <TableCell><div className="h-4 bg-gray-100 rounded w-20" /></TableCell>
-                    <TableCell><div className="h-8 bg-gray-100 rounded-xl w-20 ml-auto" /></TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-40" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-5 bg-gray-100 rounded-full w-14" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-8 bg-gray-100 rounded-xl w-20 ml-auto" />
+                    </TableCell>
                   </TableRow>
                 ))
               : filteredUsers.map((user, idx) => (
@@ -208,8 +220,12 @@ export function AdminUsersView() {
                         <span className="font-semibold text-gray-900 text-sm">{user.username}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500 font-medium">{user.email}</TableCell>
-                    <TableCell className="text-sm text-gray-500 font-medium">{user.anonAlias}</TableCell>
+                    <TableCell className="text-sm text-gray-500 font-medium">
+                      {user.email}
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-500 font-medium">
+                      {user.anonAlias}
+                    </TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex px-2.5 py-1 text-xs font-bold rounded-full ${
@@ -290,7 +306,9 @@ export function AdminUsersView() {
               <PaginationNext
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 aria-disabled={page === totalPages}
-                className={page === totalPages ? "pointer-events-none opacity-40" : "cursor-pointer"}
+                className={
+                  page === totalPages ? "pointer-events-none opacity-40" : "cursor-pointer"
+                }
               />
             </PaginationItem>
           </PaginationContent>
@@ -379,8 +397,7 @@ export function AdminUsersView() {
           <DialogHeader>
             <DialogTitle className="text-xl font-extrabold">Xóa người dùng?</DialogTitle>
             <DialogDescription className="text-gray-500 font-medium">
-              Tài khoản{" "}
-              <span className="font-bold text-gray-700">{confirmUser?.username}</span> (
+              Tài khoản <span className="font-bold text-gray-700">{confirmUser?.username}</span> (
               {confirmUser?.email}) sẽ bị xóa vĩnh viễn và không thể khôi phục.
             </DialogDescription>
           </DialogHeader>

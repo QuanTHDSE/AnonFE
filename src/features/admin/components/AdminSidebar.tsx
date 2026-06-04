@@ -1,4 +1,12 @@
-import { ArrowLeft, BookOpen, FileText, LayoutDashboard, LogOut, Shield, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Shield,
+  Users,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";

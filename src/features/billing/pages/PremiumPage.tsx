@@ -8,9 +8,21 @@ import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 
 const PLAN_ICONS = [Sparkles, Zap, Check];
 const PLAN_COLORS = [
-  { border: "border-gray-200", badge: "", button: "bg-[#F15B29] hover:bg-[#d94a1d] text-white shadow-md shadow-orange-200" },
-  { border: "border-[#F15B29]", badge: "PHỔ BIẾN", button: "bg-[#F15B29] hover:bg-[#d94a1d] text-white shadow-xl shadow-orange-200" },
-  { border: "border-gray-900", badge: "CAO CẤP NHẤT", button: "bg-gray-900 hover:bg-gray-800 text-white shadow-md shadow-gray-300" },
+  {
+    border: "border-gray-200",
+    badge: "",
+    button: "bg-[#F15B29] hover:bg-[#d94a1d] text-white shadow-md shadow-orange-200",
+  },
+  {
+    border: "border-[#F15B29]",
+    badge: "PHỔ BIẾN",
+    button: "bg-[#F15B29] hover:bg-[#d94a1d] text-white shadow-xl shadow-orange-200",
+  },
+  {
+    border: "border-gray-900",
+    badge: "CAO CẤP NHẤT",
+    button: "bg-gray-900 hover:bg-gray-800 text-white shadow-md shadow-gray-300",
+  },
 ];
 
 function formatDuration(days: number): string {
@@ -40,7 +52,12 @@ export function PremiumView() {
       return;
     }
     navigate("/checkout", {
-      state: { planId: plan.id, planName: plan.name, price: plan.price, durationDays: plan.durationDays },
+      state: {
+        planId: plan.id,
+        planName: plan.name,
+        price: plan.price,
+        durationDays: plan.durationDays,
+      },
     });
   };
 
@@ -182,7 +199,11 @@ export function PremiumView() {
                           <p className="text-sm font-bold text-gray-900 mb-2">Bao gồm:</p>
                           {features.map((f, fIdx) => (
                             <div key={fIdx} className="flex items-start gap-2.5">
-                              <Check size={16} className="text-[#F15B29] shrink-0 mt-0.5" strokeWidth={3} />
+                              <Check
+                                size={16}
+                                className="text-[#F15B29] shrink-0 mt-0.5"
+                                strokeWidth={3}
+                              />
                               <span className="text-sm text-gray-600">{f}</span>
                             </div>
                           ))}

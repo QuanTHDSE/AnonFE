@@ -13,10 +13,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
-import {
-  subscriptionService,
-  type CreateOrderResponse,
-} from "@/services/subscriptionService";
+import { subscriptionService, type CreateOrderResponse } from "@/services/subscriptionService";
 
 interface PlanState {
   planId: string;
@@ -243,9 +240,7 @@ export function CheckoutView() {
                 {/* Bank Transfer Info */}
                 {(bankAccount || transferContent) && (
                   <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="font-extrabold text-gray-900 mb-4">
-                      Thông tin chuyển khoản
-                    </h3>
+                    <h3 className="font-extrabold text-gray-900 mb-4">Thông tin chuyển khoản</h3>
                     <div className="space-y-1">
                       {bankName && <InfoRow label="Ngân hàng" value={bankName} />}
                       {accountName && <InfoRow label="Tên tài khoản" value={accountName} />}

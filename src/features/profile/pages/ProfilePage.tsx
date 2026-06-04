@@ -520,7 +520,9 @@ export function ProfileView() {
                   src={editForm.avatarUrl}
                   alt="preview"
                   className="mt-2 w-16 h-16 rounded-full object-cover border-2 border-orange-100"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
                 />
               )}
             </div>
@@ -554,7 +556,10 @@ export function ProfileView() {
                 onChange={(e) => setEditForm((f) => ({ ...f, isAnonDefault: e.target.checked }))}
                 className="w-4 h-4 accent-[#F15B29]"
               />
-              <label htmlFor="anonDefault" className="text-sm font-medium text-gray-700 cursor-pointer">
+              <label
+                htmlFor="anonDefault"
+                className="text-sm font-medium text-gray-700 cursor-pointer"
+              >
                 Mặc định đăng ẩn danh
               </label>
             </div>

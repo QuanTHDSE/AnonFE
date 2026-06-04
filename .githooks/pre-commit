@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(css|html|js|jsx|json|md|mjs|ts|tsx|yaml|yml)$' || true)
+
+if [ -z "$files" ]; then
+  exit 0
+fi
+
+echo "$files" | xargs npx prettier --write
+echo "$files" | xargs git add
+npm run format:check

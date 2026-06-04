@@ -37,9 +37,7 @@ export const userService = {
   },
 
   async getUsers(page = 1, pageSize = 10): Promise<PaginatedUsersResponse> {
-    return apiClient.get<PaginatedUsersResponse>(
-      `/api/v1/users?page=${page}&pageSize=${pageSize}`,
-    );
+    return apiClient.get<PaginatedUsersResponse>(`/api/v1/users?page=${page}&pageSize=${pageSize}`);
   },
 
   async updateMe(payload: UpdateUserPayload): Promise<UserProfile> {
