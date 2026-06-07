@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   BookOpen,
+  CreditCard,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -23,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Bài viết", icon: FileText, path: "/admin/posts" },
   { label: "Môn học", icon: BookOpen, path: "/admin/subjects" },
   { label: "Người dùng", icon: Users, path: "/admin/users" },
+  { label: "Subscription", icon: CreditCard, path: "/admin/subscriptions" },
 ];
 
 export function AdminSidebar() {

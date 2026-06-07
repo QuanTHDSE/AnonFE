@@ -23,7 +23,8 @@ export type AppSidebarItem =
   | "following"
   | "premium"
   | "bookmarks"
-  | "profile";
+  | "profile"
+  | "subscription";
 
 interface SidebarItemProps {
   icon: LucideIcon;
@@ -80,8 +81,8 @@ export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
         />
         <SidebarItem
           icon={Crown}
-          active={activeItem === "premium"}
-          onClick={() => navigate("/premium")}
+          active={activeItem === "premium" || activeItem === "subscription"}
+          onClick={() => (isLoggedIn ? navigate("/subscription") : navigate("/premium"))}
         />
         <SidebarItem
           icon={Bookmark}

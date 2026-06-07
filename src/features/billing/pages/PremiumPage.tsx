@@ -39,12 +39,18 @@ export function PremiumView() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!isLoggedIn) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    setError("");
     subscriptionService
       .getPlans()
       .then(setPlans)
       .catch(() => setError("Không thể tải gói cước. Vui lòng thử lại."))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [isLoggedIn]);
 
   const handleSelectPlan = (plan: SubscriptionPlan) => {
     if (!isLoggedIn) {
@@ -117,6 +123,21 @@ export function PremiumView() {
               </motion.p>
             </div>
 
+            {/* Not logged in */}
+            {!isLoggedIn && !isLoading && (
+              <div className="text-center py-20">
+                <p className="text-gray-500 font-medium mb-4">
+                  Vui lòng đăng nhập để xem các gói cước.
+                </p>
+                <button
+                  onClick={() => navigate("/signin")}
+                  className="px-8 py-3 bg-[#F15B29] text-white font-bold rounded-2xl hover:bg-[#d94a1d] transition-colors shadow-md shadow-orange-200"
+                >
+                  Đăng nhập
+                </button>
+              </div>
+            )}
+
             {/* Loading */}
             {isLoading && (
               <div className="flex items-center justify-center py-24 gap-3 text-gray-400">
@@ -144,7 +165,7 @@ export function PremiumView() {
                 {plans.map((plan, idx) => {
                   const color = PLAN_COLORS[idx % PLAN_COLORS.length];
                   const Icon = PLAN_ICONS[idx % PLAN_ICONS.length];
-                  const features = subscriptionService.parseFeatures(plan.features);
+                  const features = subscriptionService.parseFeatures(plan.features as unknown);
                   const isPopular = idx === 1 && plans.length >= 2;
 
                   return (

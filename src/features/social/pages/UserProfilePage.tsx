@@ -15,8 +15,10 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { followService, type FollowStats } from "@/services/followService";
 import { postService } from "@/services/postService";
 import { userService, type UserProfile } from "@/services/userService";
+import { fetchPremiumStatusSafe } from "@/services/subscriptionService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
+import { PremiumBadge } from "@/shared/components/PremiumBadge";
 import type { FeedPostItem } from "@/types";
 
 function formatDate(dateStr: string): string {
@@ -50,6 +52,7 @@ export function UserProfileView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [isProfilePremium, setIsProfilePremium] = useState(false);
 
   const isOwnProfile = !!user && user.id === id;
 
@@ -79,6 +82,12 @@ export function UserProfileView() {
         setProfile(prof);
         setPosts(postsRes.posts.filter((p) => !p.isAnonymous && p.author?.id === profileId));
         setFollowStats(stats);
+        // Use isPremium from user profile API if backend provides it, otherwise try subscription check
+        if (prof.isPremium) {
+          setIsProfilePremium(true);
+        } else {
+          void fetchPremiumStatusSafe(profileId).then(setIsProfilePremium);
+        }
       })
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Không tìm thấy người dùng."),
@@ -180,8 +189,9 @@ export function UserProfileView() {
               <div className="flex-1 text-center sm:text-left">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div>
-                    <h1 className="text-2xl font-extrabold text-gray-900 mb-1">
+                    <h1 className="text-2xl font-extrabold text-gray-900 mb-1 flex items-center gap-2">
                       {profile.username}
+                      {isProfilePremium && <PremiumBadge size={22} />}
                     </h1>
                     <p className="text-sm text-gray-400 font-medium mb-1">
                       Alias ẩn danh:{" "}

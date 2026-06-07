@@ -9,6 +9,7 @@ export interface UserProfile {
   anonAlias: string;
   role: string;
   createdAt: string;
+  isPremium?: boolean;
 }
 
 export interface UpdateUserPayload {

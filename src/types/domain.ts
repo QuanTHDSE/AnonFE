@@ -138,6 +138,7 @@ export interface FeedPostItem {
     id: string;
     name: string;
     avatar?: string;
+    isPremium?: boolean;
   } | null;
   createdAt: string;
   likesCount: number;

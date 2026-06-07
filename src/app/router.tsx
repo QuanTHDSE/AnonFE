@@ -23,6 +23,8 @@ import { AdminDashboardView } from "@/features/admin/pages/AdminDashboardPage";
 import { AdminPostsView } from "@/features/admin/pages/AdminPostsPage";
 import { AdminSubjectsView } from "@/features/admin/pages/AdminSubjectsPage";
 import { AdminUsersView } from "@/features/admin/pages/AdminUsersPage";
+import { AdminSubscriptionsView } from "@/features/admin/pages/AdminSubscriptionsPage";
+import { UserSubscriptionView } from "@/features/billing/pages/UserSubscriptionPage";
 
 export const appRoutes: RouteObject[] = [
   {
@@ -96,6 +98,10 @@ export const appRoutes: RouteObject[] = [
             path: "checkout",
             Component: CheckoutView,
           },
+          {
+            path: "subscription",
+            Component: UserSubscriptionView,
+          },
         ],
       },
       {
@@ -120,6 +126,10 @@ export const appRoutes: RouteObject[] = [
               {
                 path: "users",
                 Component: AdminUsersView,
+              },
+              {
+                path: "subscriptions",
+                Component: AdminSubscriptionsView,
               },
             ],
           },

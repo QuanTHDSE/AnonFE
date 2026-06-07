@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import Vector from "@/imports/Vector";
 import { useLocation, useNavigate } from "react-router";
 import {
@@ -8,12 +8,18 @@ import {
   CheckCircle,
   Clock,
   Copy,
+  ExternalLink,
   Loader2,
   RefreshCw,
   ShieldCheck,
+  XCircle,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
-import { subscriptionService, type CreateOrderResponse } from "@/services/subscriptionService";
+import {
+  subscriptionService,
+  parseSepayQrUrl,
+  type CreateOrderResponse,
+} from "@/services/subscriptionService";
 
 interface PlanState {
   planId: string;
@@ -21,6 +27,18 @@ interface PlanState {
   price: number;
   durationDays: number;
 }
+
+const SKIP_DISPLAY_KEYS = new Set([
+  "orderId",
+  "id",
+  "orderCode",
+  "referenceCode",
+  "qrCode",
+  "qrCodeUrl",
+  "qrImage",
+  "paymentUrl",
+  "checkoutUrl",
+]);
 
 function formatDuration(days: number): string {
   if (days >= 365) return `${Math.round(days / 365)} năm`;
@@ -39,7 +57,7 @@ function CopyButton({ value }: { value: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-[#F15B29] hover:bg-orange-50 rounded-xl transition-all border border-gray-200 hover:border-orange-200"
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-[#F15B29] hover:bg-orange-50 rounded-xl transition-all border border-gray-200 hover:border-orange-200 shrink-0"
     >
       {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
       {copied ? "Đã sao chép" : "Sao chép"}
@@ -47,24 +65,79 @@ function CopyButton({ value }: { value: string }) {
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  label,
+  value,
+  copyable = true,
+}: {
+  label: string;
+  value: string;
+  copyable?: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-      <span className="text-sm font-medium text-gray-500">{label}</span>
-      <div className="flex items-center gap-2">
-        <span className="font-bold text-gray-900 text-sm text-right max-w-[200px] break-all">
-          {value}
-        </span>
-        <CopyButton value={value} />
+    <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0 gap-3">
+      <span className="text-sm font-medium text-gray-500 shrink-0">{label}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="font-bold text-gray-900 text-sm text-right break-all">{value}</span>
+        {copyable && <CopyButton value={value} />}
       </div>
     </div>
+  );
+}
+
+/** Render any unknown fields from API response as InfoRows */
+function UnknownFields({ order }: { order: CreateOrderResponse }) {
+  const knownKeys = new Set([
+    "orderId",
+    "id",
+    "orderCode",
+    "referenceCode",
+    "amount",
+    "transferAmount",
+    "price",
+    "bankAccount",
+    "accountNumber",
+    "bankName",
+    "accountName",
+    "bankCode",
+    "transferContent",
+    "content",
+    "description",
+    "memo",
+    "qrCode",
+    "qrCodeUrl",
+    "qrImage",
+    "paymentUrl",
+    "checkoutUrl",
+    "status",
+    "planName",
+    "planId",
+    "userId",
+    "createdAt",
+    "expiredAt",
+    "paidAt",
+  ]);
+  const extras = Object.entries(order).filter(
+    ([k, v]) => !knownKeys.has(k) && v != null && typeof v !== "object" && String(v).trim() !== "",
+  );
+  if (!extras.length) return null;
+  return (
+    <>
+      {extras.map(([key, value]) => (
+        <InfoRow
+          key={key}
+          label={key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}
+          value={String(value)}
+        />
+      ))}
+    </>
   );
 }
 
 export function CheckoutView() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
 
   const plan = (location.state as PlanState | null) ?? null;
 
@@ -73,51 +146,147 @@ export function CheckoutView() {
   const [createError, setCreateError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+  const [pollCount, setPollCount] = useState(0);
+  const [checkMsg, setCheckMsg] = useState("");
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Create order on mount
   useEffect(() => {
-    if (!isLoggedIn || !plan?.planId) return;
-    setIsCreating(true);
+    if (!isLoggedIn || !plan?.planId) {
+      setIsCreating(false);
+      return;
+    }
     subscriptionService
       .createOrder(plan.planId)
-      .then((res) => setOrder(res))
-      .catch((err) =>
-        setCreateError(err instanceof Error ? err.message : "Không thể tạo đơn hàng."),
+      .then((res) => {
+        console.log("[Checkout] create-order response:", JSON.stringify(res, null, 2));
+        setOrder(res);
+      })
+      .catch((err: unknown) =>
+        setCreateError(
+          err instanceof Error ? err.message : "Không thể tạo đơn hàng. Vui lòng thử lại.",
+        ),
       )
       .finally(() => setIsCreating(false));
+    return () => {
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
   }, []);
 
-  const orderId = order?.orderId ?? order?.id ?? "";
-  const bankAccount = order?.bankAccount ?? order?.accountNumber ?? "";
-  const bankName = order?.bankName ?? "";
-  const accountName = order?.accountName ?? "";
-  const transferContent = order?.transferContent ?? order?.content ?? orderId;
-  const qrCode = order?.qrCode ?? "";
-  const paymentUrl = order?.paymentUrl ?? "";
+  // Auto-poll every 15 seconds after order created
+  useEffect(() => {
+    if (!order || isPaid) return;
+    const oid = subscriptionService.extractOrderId(order);
+    console.log("[Checkout] orderId for polling:", oid || "(empty — polling skipped)");
+    if (!oid) return;
 
-  const handleCheckStatus = async () => {
-    if (!orderId) return;
+    const scheduleNext = () => {
+      pollRef.current = setTimeout(async () => {
+        try {
+          const detail = await subscriptionService.getOrder(oid);
+          console.log("[Checkout] getOrder response:", JSON.stringify(detail, null, 2));
+          if (subscriptionService.isPaidStatus(detail.status)) {
+            setIsPaid(true);
+            return;
+          }
+        } catch {
+          // ignore poll errors
+        }
+        setPollCount((c) => c + 1);
+        scheduleNext();
+      }, 15_000);
+    };
+    scheduleNext();
+    return () => {
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
+  }, [order, isPaid]);
+
+  const orderId = order ? subscriptionService.extractOrderId(order) : "";
+
+  // Parse SePay QR URL as fallback when bank fields are null
+  const rawQrUrl = order
+    ? ((order.qrUrl ?? order.qrCode ?? order.qrCodeUrl ?? order.qrImage ?? "") as string)
+    : "";
+  const sepayInfo = rawQrUrl ? parseSepayQrUrl(rawQrUrl) : null;
+
+  const amount = order
+    ? sepayInfo?.amount || subscriptionService.extractAmount(order, plan?.price ?? 0)
+    : (plan?.price ?? 0);
+  const bankAccount = order
+    ? ((order.bankAccount ?? order.accountNumber ?? sepayInfo?.accountNumber ?? "") as string)
+    : "";
+  const bankName = order ? ((order.bankName ?? sepayInfo?.bankName ?? "") as string) : "";
+  const accountName = order ? ((order.accountName ?? "") as string) : "";
+  const transferContent = order
+    ? ((order.transferContent ??
+        order.content ??
+        order.description ??
+        order.memo ??
+        sepayInfo?.transferContent ??
+        "") as string)
+    : "";
+  const qrCode = rawQrUrl;
+  const paymentUrl = order ? ((order.paymentUrl ?? order.checkoutUrl ?? "") as string) : "";
+
+  const handleCheckNow = async () => {
+    if (pollRef.current) clearTimeout(pollRef.current);
     setIsChecking(true);
-    try {
-      const detail = await subscriptionService.getOrder(orderId);
-      const status = detail.status;
-      if (status === 1 || status === "paid" || status === "completed" || status === "success") {
-        setIsPaid(true);
+    setCheckMsg("");
+    let found = false;
+
+    // 1. Check by orderId
+    if (orderId) {
+      try {
+        const detail = await subscriptionService.getOrder(orderId);
+        console.log("[Checkout] manual getOrder:", JSON.stringify(detail, null, 2));
+        if (subscriptionService.isPaidStatus(detail.status)) {
+          setIsPaid(true);
+          found = true;
+        }
+      } catch (e) {
+        console.warn("[Checkout] getOrder error:", e);
       }
-    } finally {
-      setIsChecking(false);
     }
+
+    // 2. Fallback: check user subscriptions for an active one created recently
+    if (!found && user?.id) {
+      try {
+        const subs = await subscriptionService.getUserSubscriptions(user.id, 1, 5);
+        console.log("[Checkout] user subscriptions:", JSON.stringify(subs, null, 2));
+        const now = new Date();
+        const active = subs.items?.find((s) => {
+          const notExpired = s.expiresAt ? new Date(s.expiresAt) > now : true;
+          const isActive = subscriptionService.isPaidStatus(s.status);
+          return notExpired && isActive;
+        });
+        if (active) {
+          setIsPaid(true);
+          found = true;
+        } else if (subs.items?.length) {
+          setCheckMsg("Đơn hàng đang chờ xử lý. Vui lòng đợi thêm.");
+        } else {
+          setCheckMsg("Chưa nhận được thanh toán. Vui lòng đợi thêm vài phút.");
+        }
+      } catch (e) {
+        console.warn("[Checkout] getUserSubscriptions error:", e);
+        setCheckMsg("Không thể kiểm tra. Vui lòng thử lại.");
+      }
+    }
+
+    setIsChecking(false);
   };
 
   if (!isLoggedIn) return null;
 
   if (!plan) {
     return (
-      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
+      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-gray-500 font-medium mb-4">Không tìm thấy thông tin gói cước.</p>
           <button
             onClick={() => navigate("/premium")}
-            className="px-6 py-3 bg-[#F15B29] text-white font-bold rounded-xl"
+            className="px-6 py-3 bg-[#F15B29] text-white font-bold rounded-xl hover:bg-[#d94a1d] transition-colors"
           >
             Quay lại chọn gói
           </button>
@@ -130,22 +299,36 @@ export function CheckoutView() {
     return (
       <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4 font-sans">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-[40px] p-10 max-w-md w-full text-center border border-gray-100 shadow-xl shadow-green-100/20"
+          className="bg-white rounded-[40px] p-10 max-w-md w-full text-center border border-gray-100 shadow-2xl shadow-green-100/30"
         >
-          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", delay: 0.1, stiffness: 200 }}
+            className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+          >
             <CheckCircle size={48} className="text-green-500" />
-          </div>
-          <h2 className="text-3xl font-extrabold text-gray-900 mb-3">Thanh toán thành công!</h2>
-          <p className="text-gray-500 mb-8 font-medium">
+          </motion.div>
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Thanh toán thành công!</h2>
+          <p className="text-gray-500 mb-2 font-medium">
             Gói <span className="font-bold text-gray-900">{plan.planName}</span> đã được kích hoạt.
+          </p>
+          <p className="text-sm text-gray-400 mb-8">
+            Hiệu lực: {formatDuration(plan.durationDays)}
           </p>
           <button
             onClick={() => navigate("/")}
-            className="w-full py-4 bg-[#F15B29] text-white font-extrabold rounded-2xl hover:bg-[#d94a1d] transition-all shadow-lg shadow-orange-200"
+            className="w-full py-4 bg-[#F15B29] text-white font-extrabold rounded-2xl hover:bg-[#d94a1d] transition-all shadow-lg shadow-orange-200 mb-3"
           >
             Về trang chủ
+          </button>
+          <button
+            onClick={() => navigate("/premium")}
+            className="w-full py-3 text-gray-500 font-bold hover:text-gray-700 transition-colors text-sm"
+          >
+            Xem các gói khác
           </button>
         </motion.div>
       </div>
@@ -179,130 +362,167 @@ export function CheckoutView() {
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 md:px-8 py-8 md:py-12">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
-          {/* Payment Section */}
+          {/* Left: Payment instructions */}
           <div className="flex-1 w-full">
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-8">
               Thanh toán đơn hàng
             </h1>
 
             {/* Creating order */}
-            {isCreating && (
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-10 flex flex-col items-center gap-4">
-                <Loader2 size={36} className="animate-spin text-[#F15B29]" />
-                <p className="font-medium text-gray-500">Đang tạo đơn hàng...</p>
-              </div>
-            )}
-
-            {/* Error */}
-            {!isCreating && createError && (
-              <div className="bg-red-50 border border-red-100 rounded-3xl p-8 text-center">
-                <p className="font-bold text-red-500 mb-4">{createError}</p>
-                <button
-                  onClick={() => navigate("/premium")}
-                  className="px-6 py-3 bg-[#F15B29] text-white font-bold rounded-xl hover:bg-[#d94a1d] transition-colors"
+            <AnimatePresence mode="wait">
+              {isCreating && (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-white rounded-3xl border border-gray-100 shadow-sm p-14 flex flex-col items-center gap-4"
                 >
-                  Chọn lại gói
-                </button>
-              </div>
-            )}
+                  <Loader2 size={36} className="animate-spin text-[#F15B29]" />
+                  <p className="font-medium text-gray-500">Đang tạo đơn hàng...</p>
+                </motion.div>
+              )}
 
-            {/* Order created — show payment instructions */}
-            {!isCreating && !createError && order && (
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-5"
-              >
-                {/* QR Code (if available) */}
-                {(qrCode || paymentUrl) && (
-                  <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col items-center gap-4">
-                    <h3 className="font-extrabold text-gray-900">Quét mã QR để thanh toán</h3>
-                    {qrCode && (
-                      <img
-                        src={qrCode}
-                        alt="QR thanh toán"
-                        className="w-56 h-56 object-contain rounded-2xl border border-gray-100"
-                      />
-                    )}
-                    {paymentUrl && !qrCode && (
-                      <a
-                        href={paymentUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-6 py-3 bg-[#F15B29] text-white font-bold rounded-xl hover:bg-[#d94a1d] transition-colors"
-                      >
-                        Mở trang thanh toán
-                      </a>
-                    )}
-                  </div>
-                )}
-
-                {/* Bank Transfer Info */}
-                {(bankAccount || transferContent) && (
-                  <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="font-extrabold text-gray-900 mb-4">Thông tin chuyển khoản</h3>
-                    <div className="space-y-1">
-                      {bankName && <InfoRow label="Ngân hàng" value={bankName} />}
-                      {accountName && <InfoRow label="Tên tài khoản" value={accountName} />}
-                      {bankAccount && <InfoRow label="Số tài khoản" value={bankAccount} />}
-                      {transferContent && (
-                        <InfoRow label="Nội dung chuyển khoản" value={transferContent} />
-                      )}
-                      <InfoRow
-                        label="Số tiền"
-                        value={subscriptionService.formatPrice(order.amount ?? plan.price)}
-                      />
-                    </div>
-                    <div className="mt-4 p-3 bg-amber-50 border border-amber-100 rounded-2xl">
-                      <p className="text-xs font-bold text-amber-700">
-                        ⚠ Vui lòng nhập đúng nội dung chuyển khoản để hệ thống tự động xác nhận
-                        thanh toán.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Order ID fallback */}
-                {orderId && !bankAccount && !qrCode && (
-                  <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="font-extrabold text-gray-900 mb-4">Thông tin đơn hàng</h3>
-                    <InfoRow label="Mã đơn hàng" value={orderId} />
-                    <InfoRow
-                      label="Số tiền"
-                      value={subscriptionService.formatPrice(order.amount ?? plan.price)}
-                    />
-                  </div>
-                )}
-
-                {/* Waiting + Check button */}
-                <div className="bg-blue-50 border border-blue-100 rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="flex items-center gap-3 flex-1">
-                    <Clock size={20} className="text-blue-500 shrink-0" />
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm">Chờ xác nhận thanh toán</p>
-                      <p className="text-xs text-gray-500 font-medium mt-0.5">
-                        Hệ thống sẽ tự động kích hoạt gói sau khi nhận được thanh toán
-                      </p>
-                    </div>
+              {/* Error */}
+              {!isCreating && createError && (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-50 border border-red-100 rounded-3xl p-8 flex flex-col items-center gap-4 text-center"
+                >
+                  <XCircle size={40} className="text-red-400" />
+                  <div>
+                    <p className="font-bold text-red-500 mb-1">Tạo đơn hàng thất bại</p>
+                    <p className="text-sm text-red-400">{createError}</p>
                   </div>
                   <button
-                    onClick={() => void handleCheckStatus()}
-                    disabled={isChecking}
-                    className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors disabled:opacity-50 shrink-0"
+                    onClick={() => navigate("/premium")}
+                    className="px-6 py-3 bg-[#F15B29] text-white font-bold rounded-xl hover:bg-[#d94a1d] transition-colors"
                   >
-                    {isChecking ? (
-                      <Loader2 size={15} className="animate-spin" />
-                    ) : (
-                      <RefreshCw size={15} />
-                    )}
-                    Kiểm tra trạng thái
+                    Chọn lại gói
                   </button>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )}
+
+              {/* Order ready */}
+              {!isCreating && !createError && order && (
+                <motion.div
+                  key="order"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-5"
+                >
+                  {/* QR Code */}
+                  {(qrCode || paymentUrl) && (
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col items-center gap-4">
+                      <h3 className="font-extrabold text-gray-900 text-lg">
+                        Quét mã QR để thanh toán
+                      </h3>
+                      {qrCode && (
+                        <img
+                          src={qrCode}
+                          alt="QR thanh toán"
+                          className="w-60 h-60 object-contain rounded-2xl border border-gray-100 bg-white p-2"
+                        />
+                      )}
+                      {paymentUrl && (
+                        <a
+                          href={paymentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-2 px-6 py-3 bg-[#F15B29] text-white font-bold rounded-xl hover:bg-[#d94a1d] transition-colors"
+                        >
+                          <ExternalLink size={16} />
+                          Mở trang thanh toán
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Bank Transfer Info */}
+                  {(bankAccount || transferContent || bankName) && (
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                      <h3 className="font-extrabold text-gray-900 text-lg mb-4">
+                        Thông tin chuyển khoản
+                      </h3>
+                      <div className="space-y-0.5">
+                        {bankName && (
+                          <InfoRow label="Ngân hàng" value={bankName} copyable={false} />
+                        )}
+                        {accountName && (
+                          <InfoRow label="Tên tài khoản" value={accountName} copyable={false} />
+                        )}
+                        {bankAccount && <InfoRow label="Số tài khoản" value={bankAccount} />}
+                        {transferContent && (
+                          <InfoRow label="Nội dung chuyển khoản" value={transferContent} />
+                        )}
+                        <InfoRow label="Số tiền" value={subscriptionService.formatPrice(amount)} />
+                        <UnknownFields order={order} />
+                      </div>
+                      <div className="mt-5 p-3.5 bg-amber-50 border border-amber-100 rounded-2xl">
+                        <p className="text-xs font-bold text-amber-700 leading-relaxed">
+                          ⚠ Vui lòng nhập đúng nội dung chuyển khoản để hệ thống tự động xác nhận
+                          thanh toán. Không thay đổi nội dung!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fallback: only orderId available */}
+                  {orderId && !bankAccount && !qrCode && !transferContent && !bankName && (
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                      <h3 className="font-extrabold text-gray-900 text-lg mb-4">
+                        Thông tin đơn hàng
+                      </h3>
+                      <div className="space-y-0.5">
+                        <InfoRow label="Mã đơn hàng" value={orderId} />
+                        <InfoRow label="Số tiền" value={subscriptionService.formatPrice(amount)} />
+                        <UnknownFields order={order} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Waiting + Check */}
+                  <div className="bg-blue-50 border border-blue-100 rounded-3xl p-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="flex items-start gap-3 flex-1">
+                        <Clock size={20} className="text-blue-500 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-gray-900 text-sm">Chờ xác nhận thanh toán</p>
+                          <p className="text-xs text-gray-500 font-medium mt-0.5">
+                            Hệ thống tự động kiểm tra mỗi 15 giây
+                            {pollCount > 0 && (
+                              <span className="ml-1 text-blue-400">
+                                (đã kiểm tra {pollCount} lần)
+                              </span>
+                            )}
+                          </p>
+                          {checkMsg && (
+                            <p className="text-xs font-bold text-amber-600 mt-1.5">{checkMsg}</p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => void handleCheckNow()}
+                        disabled={isChecking}
+                        className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold bg-white border border-blue-200 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors disabled:opacity-50 shrink-0"
+                      >
+                        {isChecking ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                          <RefreshCw size={15} />
+                        )}
+                        Kiểm tra ngay
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Order Summary */}
+          {/* Right: Order Summary */}
           <div className="w-full lg:w-[360px] shrink-0">
             <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-xl shadow-gray-100/50 sticky top-28">
               <h3 className="text-xl font-extrabold text-gray-900 mb-6">Tóm tắt đơn hàng</h3>
@@ -326,7 +546,7 @@ export function CheckoutView() {
                   <span>{subscriptionService.formatPrice(plan.price)}</span>
                 </div>
                 <div className="flex justify-between text-gray-500 font-medium">
-                  <span>Thuế (VAT 10%)</span>
+                  <span>VAT</span>
                   <span>Đã bao gồm</span>
                 </div>
               </div>
@@ -338,12 +558,19 @@ export function CheckoutView() {
                 </span>
               </div>
 
+              {orderId && (
+                <div className="mb-5 p-3 bg-gray-50 rounded-2xl">
+                  <p className="text-xs text-gray-400 font-medium mb-1">Mã đơn hàng</p>
+                  <p className="text-xs font-bold text-gray-600 break-all">{orderId}</p>
+                </div>
+              )}
+
               <div className="bg-orange-50 rounded-2xl p-4 flex gap-3">
                 <Check size={18} className="text-[#F15B29] shrink-0 mt-0.5" strokeWidth={3} />
                 <div>
                   <p className="text-sm font-bold text-gray-900 mb-1">Đảm bảo hoàn tiền 7 ngày</p>
                   <p className="text-xs font-medium text-gray-500">
-                    Hoàn tiền 100% nếu bạn không hài lòng với trải nghiệm.
+                    Hoàn tiền 100% nếu bạn không hài lòng.
                   </p>
                 </div>
               </div>

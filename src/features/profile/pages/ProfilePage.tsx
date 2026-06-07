@@ -29,6 +29,7 @@ import { postService } from "@/services/postService";
 import { userService, type UpdateUserPayload, type UserProfile } from "@/services/userService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
+import { PremiumBadge } from "@/shared/components/PremiumBadge";
 import type { FeedPostItem } from "@/types";
 
 function formatDate(dateStr: string): string {
@@ -150,7 +151,7 @@ const PostCard = ({ post, onEdit, onDelete }: PostCardProps) => {
 
 export function ProfileView() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isPremium } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<FeedPostItem[]>([]);
@@ -276,8 +277,9 @@ export function ProfileView() {
               ) : (
                 <>
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-1">
-                    <h1 className="text-2xl font-extrabold text-gray-900">
+                    <h1 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
                       {profile?.username ?? user?.name}
+                      {isPremium && <PremiumBadge size={22} />}
                     </h1>
                     <button
                       onClick={openEdit}

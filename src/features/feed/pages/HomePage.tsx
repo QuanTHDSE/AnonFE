@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
   Bookmark,
@@ -17,6 +17,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
+import { PremiumBadge } from "@/shared/components/PremiumBadge";
 import type { FeedPostItem } from "@/types";
 
 function formatRelativeTime(dateStr: string): string {
@@ -31,7 +32,13 @@ function formatRelativeTime(dateStr: string): string {
   return `${Math.floor(days / 7)}w`;
 }
 
-const PostCard = ({ post }: { post: FeedPostItem }) => {
+const PostCard = ({
+  post,
+  premiumUserIds,
+}: {
+  post: FeedPostItem;
+  premiumUserIds: Set<string>;
+}) => {
   const images = post.images ?? [];
   const tags = post.tags ?? [];
   return (
@@ -62,9 +69,10 @@ const PostCard = ({ post }: { post: FeedPostItem }) => {
             ) : post.author ? (
               <Link
                 to={`/users/${post.author.id}`}
-                className="font-semibold text-gray-900 hover:text-[#F15B29] transition-colors block"
+                className="font-semibold text-gray-900 hover:text-[#F15B29] transition-colors flex items-center gap-1"
               >
                 {post.author.name}
+                {premiumUserIds.has(post.author.id) && <PremiumBadge />}
               </Link>
             ) : (
               <h3 className="font-semibold text-gray-900">Người dùng</h3>
@@ -146,9 +154,20 @@ const PAGE_SIZE = 10;
 
 export function HomeView() {
   const navigate = useNavigate();
-  const { isLoggedIn, user, logout } = useAuth();
+  const { isLoggedIn, user, isPremium, logout } = useAuth();
+
   const [posts, setPosts] = useState<FeedPostItem[]>([]);
   const [trends, setTrends] = useState<string[]>([]);
+
+  // Build set of premium user IDs: own user + any author with isPremium from API
+  const premiumUserIds = useMemo<Set<string>>(() => {
+    const set = new Set<string>();
+    if (isPremium && user?.id) set.add(user.id);
+    for (const post of posts) {
+      if (post.author?.id && post.author.isPremium) set.add(post.author.id);
+    }
+    return set;
+  }, [isPremium, user?.id, posts]);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
@@ -332,7 +351,7 @@ export function HomeView() {
                   <div className="columns-1 lg:columns-2 gap-6 md:gap-8 pb-8">
                     {posts.map((post) => (
                       <div key={post.id} className="break-inside-avoid w-full">
-                        <PostCard post={post} />
+                        <PostCard post={post} premiumUserIds={premiumUserIds} />
                       </div>
                     ))}
                   </div>
