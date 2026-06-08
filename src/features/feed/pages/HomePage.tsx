@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
   Bookmark,
@@ -15,6 +15,7 @@ import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
+import { bookmarkService } from "@/services/bookmarkService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
@@ -35,12 +36,68 @@ function formatRelativeTime(dateStr: string): string {
 const PostCard = ({
   post,
   premiumUserIds,
+  bookmarkedPostIds,
 }: {
   post: FeedPostItem;
   premiumUserIds: Set<string>;
+  bookmarkedPostIds: Set<string>;
 }) => {
+  const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
+  const [likesCount, setLikesCount] = useState(post.likesCount);
+  const [hasUpvoted, setHasUpvoted] = useState(post.hasUpvoted ?? false);
+  const [isUpvoting, setIsUpvoting] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(() => bookmarkedPostIds.has(post.id));
+  const [isBookmarking, setIsBookmarking] = useState(false);
+
+  useEffect(() => {
+    setIsBookmarked(bookmarkedPostIds.has(post.id));
+  }, [bookmarkedPostIds, post.id]);
   const images = post.images ?? [];
   const tags = post.tags ?? [];
+
+  const handleUpvote = async () => {
+    if (isUpvoting) return;
+    if (!isLoggedIn) {
+      navigate("/signin");
+      return;
+    }
+    setIsUpvoting(true);
+    setHasUpvoted((prev) => !prev);
+    setLikesCount((prev) => (hasUpvoted ? prev - 1 : prev + 1));
+    try {
+      await postService.upvotePost(post.id);
+    } catch {
+      setHasUpvoted((prev) => !prev);
+      setLikesCount((prev) => (hasUpvoted ? prev + 1 : prev - 1));
+    } finally {
+      setIsUpvoting(false);
+    }
+  };
+
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isBookmarking) return;
+    if (!isLoggedIn) {
+      navigate("/signin");
+      return;
+    }
+    setIsBookmarking(true);
+    const next = !isBookmarked;
+    setIsBookmarked(next);
+    try {
+      if (next) {
+        await bookmarkService.addBookmark(post.id);
+      } else {
+        await bookmarkService.removeBookmark(post.id);
+      }
+    } catch {
+      setIsBookmarked(!next);
+    } finally {
+      setIsBookmarking(false);
+    }
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -86,8 +143,15 @@ const PostCard = ({
           <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
             {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
           </span>
-          <button className="text-gray-400 hover:text-[#F15B29] transition-colors">
-            <Bookmark size={20} />
+          <button
+            onClick={(e) => void handleBookmark(e)}
+            disabled={isBookmarking}
+            className={`transition-colors disabled:opacity-50 ${
+              isBookmarked ? "text-[#F15B29]" : "text-gray-400 hover:text-[#F15B29]"
+            }`}
+            title={isBookmarked ? "Bỏ lưu" : "Lưu bài viết"}
+          >
+            <Bookmark size={20} className={isBookmarked ? "fill-[#F15B29]" : ""} />
           </button>
         </div>
       </div>
@@ -133,9 +197,15 @@ const PostCard = ({
 
         {/* Post Actions */}
         <div className="flex items-center pt-4 border-t border-gray-100 gap-6">
-          <button className="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition-colors group">
-            <Heart size={20} className="group-hover:fill-red-500" />
-            <span className="text-sm font-semibold">{post.likesCount}</span>
+          <button
+            onClick={() => void handleUpvote()}
+            disabled={isUpvoting}
+            className={`flex items-center gap-1.5 transition-colors group disabled:cursor-default ${
+              hasUpvoted ? "text-red-500" : "text-gray-500 hover:text-red-500"
+            }`}
+          >
+            <Heart size={20} className={hasUpvoted ? "fill-red-500" : "group-hover:fill-red-500"} />
+            <span className="text-sm font-semibold">{likesCount}</span>
           </button>
           <button className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors">
             <MessageSquare size={20} />
@@ -158,6 +228,18 @@ export function HomeView() {
 
   const [posts, setPosts] = useState<FeedPostItem[]>([]);
   const [trends, setTrends] = useState<string[]>([]);
+  const [bookmarkedPostIds, setBookmarkedPostIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setBookmarkedPostIds(new Set());
+      return;
+    }
+    bookmarkService
+      .getBookmarks({ pageSize: 500 })
+      .then((res) => setBookmarkedPostIds(new Set(res.items.map((b) => b.postId))))
+      .catch(() => {});
+  }, [isLoggedIn]);
 
   // Build set of premium user IDs: own user + any author with isPremium from API
   const premiumUserIds = useMemo<Set<string>>(() => {
@@ -351,7 +433,11 @@ export function HomeView() {
                   <div className="columns-1 lg:columns-2 gap-6 md:gap-8 pb-8">
                     {posts.map((post) => (
                       <div key={post.id} className="break-inside-avoid w-full">
-                        <PostCard post={post} premiumUserIds={premiumUserIds} />
+                        <PostCard
+                          post={post}
+                          premiumUserIds={premiumUserIds}
+                          bookmarkedPostIds={bookmarkedPostIds}
+                        />
                       </div>
                     ))}
                   </div>

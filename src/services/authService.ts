@@ -3,7 +3,6 @@ import { apiClient, TOKEN_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY } from "@/servi
 
 export const USER_STORAGE_KEY = "anon.user";
 const USERNAME_MAP_KEY = "anon.usernames";
-const ADMIN_EMAILS = ["admin@anon.com", "tranhuudangquan123@gmail.com"];
 
 export interface LoginPayload {
   email: string;
@@ -112,8 +111,7 @@ function createUserFromResponse(
   const id = str(response.userId) ?? str(response.user?.id) ?? str(jwt["sub"]) ?? "";
 
   const jwtRole = getRoleFromJwt(jwt);
-  const role: UserRole =
-    jwtRole === "admin" || ADMIN_EMAILS.includes(email.toLowerCase()) ? "admin" : "user";
+  const role: UserRole = jwtRole === "admin" ? "admin" : "user";
 
   return { id, email, name, role };
 }

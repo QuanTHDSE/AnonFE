@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
+import { bookmarkService } from "@/services/bookmarkService";
+import { CommentSection } from "@/features/posts/components/CommentSection";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import type { FeedPostItem } from "@/types";
@@ -34,25 +36,39 @@ function formatDate(dateStr: string): string {
 export function PostDetailView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const [post, setPost] = useState<FeedPostItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(0);
+  const [likesCount, setLikesCount] = useState(0);
+  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [isUpvoting, setIsUpvoting] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isBookmarking, setIsBookmarking] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     setIsLoading(true);
     postService
       .getPostById(id)
-      .then((data) => setPost(data))
+      .then((data) => {
+        setPost(data);
+        setCommentsCount(data.commentsCount);
+        setLikesCount(data.likesCount);
+        if (data.hasUpvoted !== undefined) setHasUpvoted(data.hasUpvoted);
+        if (isLoggedIn) {
+          void bookmarkService.checkBookmark(id).then(setIsBookmarked);
+        }
+      })
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Không tìm thấy bài viết."),
       )
       .finally(() => setIsLoading(false));
-  }, [id]);
+  }, [id, isLoggedIn]);
 
   const handleDelete = async () => {
     if (!id) return;
@@ -64,6 +80,45 @@ export function PostDetailView() {
       setIsDeleting(false);
       setShowDeleteModal(false);
       setError(err instanceof Error ? err.message : "Xóa bài viết thất bại.");
+    }
+  };
+
+  const handleUpvote = async () => {
+    if (!id || isUpvoting || !isLoggedIn) return;
+    setIsUpvoting(true);
+    // Optimistic update
+    setHasUpvoted((prev) => !prev);
+    setLikesCount((prev) => (hasUpvoted ? prev - 1 : prev + 1));
+    try {
+      await postService.upvotePost(id);
+    } catch {
+      // Revert on error
+      setHasUpvoted((prev) => !prev);
+      setLikesCount((prev) => (hasUpvoted ? prev + 1 : prev - 1));
+    } finally {
+      setIsUpvoting(false);
+    }
+  };
+
+  const handleBookmark = async () => {
+    if (!id || isBookmarking) return;
+    if (!isLoggedIn) {
+      navigate("/signin");
+      return;
+    }
+    setIsBookmarking(true);
+    const next = !isBookmarked;
+    setIsBookmarked(next);
+    try {
+      if (next) {
+        await bookmarkService.addBookmark(id);
+      } else {
+        await bookmarkService.removeBookmark(id);
+      }
+    } catch {
+      setIsBookmarked(!next);
+    } finally {
+      setIsBookmarking(false);
     }
   };
 
@@ -210,8 +265,15 @@ export function PostDetailView() {
                           </button>
                         </>
                       )}
-                      <button className="p-2 text-gray-400 hover:text-[#F15B29] transition-colors rounded-xl hover:bg-orange-50">
-                        <Bookmark size={20} />
+                      <button
+                        onClick={() => void handleBookmark()}
+                        disabled={isBookmarking}
+                        className={`p-2 transition-colors rounded-xl hover:bg-orange-50 disabled:opacity-50 ${
+                          isBookmarked ? "text-[#F15B29]" : "text-gray-400 hover:text-[#F15B29]"
+                        }`}
+                        title={isBookmarked ? "Bỏ lưu" : "Lưu bài viết"}
+                      >
+                        <Bookmark size={20} className={isBookmarked ? "fill-[#F15B29]" : ""} />
                       </button>
                     </div>
                   </div>
@@ -242,13 +304,23 @@ export function PostDetailView() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-6 pt-6 border-t border-gray-100">
-                    <button className="flex items-center gap-2 text-gray-500 hover:text-red-500 transition-colors group">
-                      <Heart size={22} className="group-hover:fill-red-500 transition-all" />
-                      <span className="font-bold">{post.likesCount}</span>
+                    <button
+                      onClick={() => void handleUpvote()}
+                      disabled={isUpvoting || !isLoggedIn}
+                      className={`flex items-center gap-2 transition-colors group disabled:cursor-default ${
+                        hasUpvoted ? "text-red-500" : "text-gray-500 hover:text-red-500"
+                      }`}
+                      title={isLoggedIn ? undefined : "Đăng nhập để upvote"}
+                    >
+                      <Heart
+                        size={22}
+                        className={`transition-all ${hasUpvoted ? "fill-red-500" : "group-hover:fill-red-500"}`}
+                      />
+                      <span className="font-bold">{likesCount}</span>
                     </button>
                     <button className="flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors">
                       <MessageSquare size={22} />
-                      <span className="font-bold">{post.commentsCount}</span>
+                      <span className="font-bold">{commentsCount}</span>
                     </button>
                     <button className="flex items-center gap-2 text-gray-500 hover:text-green-500 transition-colors ml-auto">
                       <Share2 size={22} />
@@ -256,6 +328,12 @@ export function PostDetailView() {
                     </button>
                   </div>
                 </div>
+                {/* Comment Section */}
+                <CommentSection
+                  postId={post.id}
+                  initialCount={post.commentsCount}
+                  onTotalChange={setCommentsCount}
+                />
               </motion.article>
             );
           })()}

@@ -24,6 +24,7 @@ import { AdminPostsView } from "@/features/admin/pages/AdminPostsPage";
 import { AdminSubjectsView } from "@/features/admin/pages/AdminSubjectsPage";
 import { AdminUsersView } from "@/features/admin/pages/AdminUsersPage";
 import { AdminSubscriptionsView } from "@/features/admin/pages/AdminSubscriptionsPage";
+import { AdminRolesView } from "@/features/admin/pages/AdminRolesPage";
 import { UserSubscriptionView } from "@/features/billing/pages/UserSubscriptionPage";
 
 export const appRoutes: RouteObject[] = [
@@ -130,6 +131,10 @@ export const appRoutes: RouteObject[] = [
               {
                 path: "subscriptions",
                 Component: AdminSubscriptionsView,
+              },
+              {
+                path: "roles",
+                Component: AdminRolesView,
               },
             ],
           },

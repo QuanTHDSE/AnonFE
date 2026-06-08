@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { ExternalLink, Loader2, Pencil, Search, Trash2 } from "lucide-react";
+import { ExternalLink, Loader2, Pencil, Search, Shield, Trash2 } from "lucide-react";
 import { userService, type UserProfile, type UpdateUserPayload } from "@/services/userService";
+import { roleService, type Role } from "@/services/roleService";
+import { UserRoleDialog } from "@/features/admin/pages/AdminRolesPage";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +67,9 @@ export function AdminUsersView() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [roleDialogUser, setRoleDialogUser] = useState<UserProfile | null>(null);
+  const [rolesMap, setRolesMap] = useState<Record<string, Role[]>>({});
+
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [editForm, setEditForm] = useState<UpdateUserPayload>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -73,18 +78,36 @@ export function AdminUsersView() {
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
 
-  const loadUsers = useCallback(async (pageNum: number) => {
-    setIsLoading(true);
-    try {
-      const res = await userService.getUsers(pageNum, PAGE_SIZE);
-      setUsers(res.users);
-      setFilteredUsers(res.users);
-      setTotal(res.total);
-      setTotalPages(res.totalPages);
-    } finally {
-      setIsLoading(false);
-    }
+  const loadRolesForUsers = useCallback(async (userList: UserProfile[]) => {
+    const entries = await Promise.all(
+      userList.map(async (u) => {
+        try {
+          const roles = await roleService.getUserRoles(u.id);
+          return [u.id, roles] as [string, Role[]];
+        } catch {
+          return [u.id, []] as [string, Role[]];
+        }
+      }),
+    );
+    setRolesMap((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
   }, []);
+
+  const loadUsers = useCallback(
+    async (pageNum: number) => {
+      setIsLoading(true);
+      try {
+        const res = await userService.getUsers(pageNum, PAGE_SIZE);
+        setUsers(res.users);
+        setFilteredUsers(res.users);
+        setTotal(res.total);
+        setTotalPages(res.totalPages);
+        void loadRolesForUsers(res.users);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [loadRolesForUsers],
+  );
 
   useEffect(() => {
     void loadUsers(page);
@@ -138,6 +161,15 @@ export function AdminUsersView() {
       setEditError(err instanceof Error ? err.message : "Cập nhật thất bại.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const refreshUserRoles = async (userId: string) => {
+    try {
+      const roles = await roleService.getUserRoles(userId);
+      setRolesMap((prev) => ({ ...prev, [userId]: roles }));
+    } catch {
+      // silent
     }
   };
 
@@ -227,15 +259,28 @@ export function AdminUsersView() {
                       {user.anonAlias}
                     </TableCell>
                     <TableCell>
-                      <span
-                        className={`inline-flex px-2.5 py-1 text-xs font-bold rounded-full ${
-                          user.role === "admin"
-                            ? "bg-orange-50 text-[#F15B29] border border-orange-100"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {user.role}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {rolesMap[user.id] === undefined ? (
+                          <div className="h-5 w-14 bg-gray-100 rounded-full animate-pulse" />
+                        ) : rolesMap[user.id].length === 0 ? (
+                          <span className="inline-flex px-2.5 py-1 text-xs font-bold rounded-full bg-gray-100 text-gray-400">
+                            Chưa có role
+                          </span>
+                        ) : (
+                          rolesMap[user.id].map((role) => (
+                            <span
+                              key={role.id}
+                              className={`inline-flex px-2.5 py-1 text-xs font-bold rounded-full ${
+                                role.name.toLowerCase() === "admin"
+                                  ? "bg-orange-50 text-[#F15B29] border border-orange-100"
+                                  : "bg-purple-50 text-purple-600 border border-purple-100"
+                              }`}
+                            >
+                              {role.name}
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 font-medium">
                       {formatDate(user.createdAt)}
@@ -248,6 +293,13 @@ export function AdminUsersView() {
                           title="Xem hồ sơ"
                         >
                           <ExternalLink size={15} />
+                        </button>
+                        <button
+                          onClick={() => setRoleDialogUser(user)}
+                          className="p-2 text-gray-400 hover:text-purple-500 hover:bg-purple-50 rounded-xl transition-all"
+                          title="Quản lý Roles"
+                        >
+                          <Shield size={15} />
                         </button>
                         <button
                           onClick={() => openEdit(user)}
@@ -390,6 +442,19 @@ export function AdminUsersView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Role Management Dialog */}
+      {roleDialogUser && (
+        <UserRoleDialog
+          open={!!roleDialogUser}
+          userId={roleDialogUser.id}
+          username={roleDialogUser.username}
+          onClose={() => {
+            void refreshUserRoles(roleDialogUser.id);
+            setRoleDialogUser(null);
+          }}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!confirmDeleteId} onOpenChange={(open) => !open && setConfirmDeleteId(null)}>

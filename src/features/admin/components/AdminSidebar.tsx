@@ -3,6 +3,7 @@ import {
   BookOpen,
   CreditCard,
   FileText,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Shield,
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Môn học", icon: BookOpen, path: "/admin/subjects" },
   { label: "Người dùng", icon: Users, path: "/admin/users" },
   { label: "Subscription", icon: CreditCard, path: "/admin/subscriptions" },
+  { label: "Phân quyền", icon: KeyRound, path: "/admin/roles" },
 ];
 
 export function AdminSidebar() {

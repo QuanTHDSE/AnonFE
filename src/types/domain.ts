@@ -143,6 +143,7 @@ export interface FeedPostItem {
   createdAt: string;
   likesCount: number;
   commentsCount: number;
+  hasUpvoted?: boolean;
 }
 
 export interface PaginatedPostsResponse {

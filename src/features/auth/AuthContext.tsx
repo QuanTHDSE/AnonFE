@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { authService, type LoginPayload } from "@/services/authService";
 import { subscriptionService } from "@/services/subscriptionService";
+import { roleService } from "@/services/roleService";
 import type { User } from "@/types";
 
 interface AuthContextType {
@@ -30,8 +31,9 @@ async function fetchPremiumStatus(userId: string): Promise<boolean> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
   const [isPremium, setIsPremium] = useState(false);
+  const [isAdminFromApi, setIsAdminFromApi] = useState(false);
   const isLoggedIn = Boolean(user);
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" || isAdminFromApi;
   const userEmail = user?.email ?? null;
 
   // Fetch premium status whenever user changes
@@ -43,10 +45,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void fetchPremiumStatus(user.id).then(setIsPremium);
   }, [user?.id]);
 
+  // Check admin role via roles API (JWT claim may not reflect roles assigned after login)
+  useEffect(() => {
+    if (!user?.id) {
+      setIsAdminFromApi(false);
+      return;
+    }
+    roleService
+      .getUserRoles(user.id)
+      .then((roles) => {
+        setIsAdminFromApi(roles.some((r) => r.name.toLowerCase() === "admin"));
+      })
+      .catch(() => setIsAdminFromApi(false));
+  }, [user?.id]);
+
   useEffect(() => {
     const handleSessionExpired = () => {
       setUser(null);
       setIsPremium(false);
+      setIsAdminFromApi(false);
     };
     window.addEventListener("auth:session-expired", handleSessionExpired);
     return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
@@ -60,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     setIsPremium(false);
+    setIsAdminFromApi(false);
     void authService.logout();
   };
 

@@ -31,8 +31,20 @@ interface RawPostItem {
   subjectName?: string | null;
   imageUrls?: string[] | null;
   tags?: string[] | null;
+  // upvote / like — try multiple API field names
   upvotes?: number;
+  likesCount?: number;
+  upvoteCount?: number;
+  // upvote status for current user
+  hasUpvoted?: boolean;
+  isUpvoted?: boolean;
+  currentUserUpvoted?: boolean;
+  isUpvotedByCurrentUser?: boolean;
+  // comment count — try multiple API field names
   commentsCount?: number;
+  commentCount?: number;
+  totalComments?: number;
+  numberOfComments?: number;
   status?: string;
   createdAt: string;
 }
@@ -45,7 +57,8 @@ interface RawPaginatedPostsResponse {
   totalPages: number;
 }
 
-function mapPost(raw: RawPostItem, usernameMap: Record<string, string> = {}): FeedPostItem {
+function mapPost(rawInput: RawPostItem, usernameMap: Record<string, string> = {}): FeedPostItem {
+  const raw = rawInput as RawPostItem & Record<string, unknown>;
   const resolvedName = raw.authorUsername || usernameMap[raw.authorId];
   return {
     id: raw.id,
@@ -62,8 +75,11 @@ function mapPost(raw: RawPostItem, usernameMap: Record<string, string> = {}): Fe
       ? { id: "", name: raw.authorAnonAlias || "Ẩn danh" }
       : { id: raw.authorId, name: resolvedName || "Người dùng" },
     createdAt: raw.createdAt,
-    likesCount: raw.upvotes ?? 0,
-    commentsCount: raw.commentsCount ?? 0,
+    likesCount: raw.upvotes ?? raw.likesCount ?? raw.upvoteCount ?? 0,
+    hasUpvoted:
+      raw.hasUpvoted ?? raw.isUpvoted ?? raw.currentUserUpvoted ?? raw.isUpvotedByCurrentUser,
+    commentsCount:
+      raw.commentsCount ?? raw.commentCount ?? raw.totalComments ?? raw.numberOfComments ?? 0,
   };
 }
 
@@ -146,6 +162,10 @@ export const postService = {
 
   async deletePost(id: string): Promise<void> {
     await apiClient.delete(`/api/v1/posts/${id}`);
+  },
+
+  async upvotePost(id: string): Promise<void> {
+    await apiClient.post(`/api/v1/posts/${id}/upvote`, {});
   },
 
   async createSubject(payload: CreateSubjectPayload): Promise<Subject> {
