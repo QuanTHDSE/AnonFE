@@ -36,6 +36,7 @@ interface RawPostItem {
   likesCount?: number;
   upvoteCount?: number;
   // upvote status for current user
+  isUpvotedByMe?: boolean;
   hasUpvoted?: boolean;
   isUpvoted?: boolean;
   currentUserUpvoted?: boolean;
@@ -77,7 +78,11 @@ function mapPost(rawInput: RawPostItem, usernameMap: Record<string, string> = {}
     createdAt: raw.createdAt,
     likesCount: raw.upvotes ?? raw.likesCount ?? raw.upvoteCount ?? 0,
     hasUpvoted:
-      raw.hasUpvoted ?? raw.isUpvoted ?? raw.currentUserUpvoted ?? raw.isUpvotedByCurrentUser,
+      raw.isUpvotedByMe ??
+      raw.hasUpvoted ??
+      raw.isUpvoted ??
+      raw.currentUserUpvoted ??
+      raw.isUpvotedByCurrentUser,
     commentsCount:
       raw.commentsCount ?? raw.commentCount ?? raw.totalComments ?? raw.numberOfComments ?? 0,
   };
