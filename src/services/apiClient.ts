@@ -118,6 +118,15 @@ export const apiClient = {
   putForm<T>(path: string, body: FormData): Promise<T> {
     return request<T>(path, { method: "PUT", body });
   },
+  patch<T>(path: string, body?: unknown): Promise<T> {
+    return request<T>(path, {
+      method: "PATCH",
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  },
+  patchForm<T>(path: string, body: FormData): Promise<T> {
+    return request<T>(path, { method: "PATCH", body });
+  },
   delete<T>(path: string): Promise<T> {
     return request<T>(path, { method: "DELETE" });
   },

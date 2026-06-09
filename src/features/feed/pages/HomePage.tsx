@@ -14,7 +14,7 @@ import {
 import { motion } from "motion/react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";
-import { postService } from "@/services/postService";
+import { postService, type TrendingTag } from "@/services/postService";
 import { bookmarkService } from "@/services/bookmarkService";
 import { commentService } from "@/services/commentService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
@@ -245,7 +245,7 @@ export function HomeView() {
   const { isLoggedIn, user, isPremium, logout, userAvatarUrl } = useAuth();
 
   const [posts, setPosts] = useState<FeedPostItem[]>([]);
-  const [trends, setTrends] = useState<string[]>([]);
+  const [trends, setTrends] = useState<TrendingTag[]>([]);
   const [bookmarkedPostIds, setBookmarkedPostIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -299,7 +299,10 @@ export function HomeView() {
   }, [search, loadPosts]);
 
   useEffect(() => {
-    void postService.getTrends().then(setTrends);
+    void postService
+      .getTrendingTags()
+      .then(setTrends)
+      .catch(() => {});
   }, []);
 
   const handleSearchChange = (val: string) => {
@@ -506,25 +509,33 @@ export function HomeView() {
               <TrendingUp size={20} className="text-[#F15B29]" />
             </div>
 
-            <div className="space-y-5">
-              {trends.map((tag, index) => (
-                <div
-                  key={tag}
-                  className="flex items-center gap-4 group cursor-pointer p-2 -mx-2 rounded-xl hover:bg-gray-50 transition-all"
-                >
-                  <span className="text-lg font-bold text-gray-200 group-hover:text-[#F15B29] transition-colors w-6">
-                    {(index + 1).toString().padStart(2, "0")}
-                  </span>
-                  <span className="text-gray-700 font-medium italic group-hover:text-[#F15B29] transition-colors truncate">
-                    #{tag}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <button className="mt-8 w-full py-3.5 bg-orange-50 text-[#F15B29] font-bold rounded-xl hover:bg-orange-100 transition-colors">
-              Show more
-            </button>
+            {trends.length === 0 ? (
+              <p className="text-sm text-gray-400 font-medium py-2">
+                Chưa có xu hướng nào. Hãy thêm thẻ vào bài viết của bạn!
+              </p>
+            ) : (
+              <div className="space-y-5">
+                {trends.map((trend, index) => (
+                  <button
+                    key={trend.tag}
+                    onClick={() => handleSearchChange(trend.tag)}
+                    className="w-full flex items-center gap-4 group cursor-pointer p-2 -mx-2 rounded-xl hover:bg-gray-50 transition-all text-left"
+                  >
+                    <span className="text-lg font-bold text-gray-200 group-hover:text-[#F15B29] transition-colors w-6 shrink-0">
+                      {(index + 1).toString().padStart(2, "0")}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-gray-700 font-medium italic group-hover:text-[#F15B29] transition-colors truncate">
+                        #{trend.tag}
+                      </span>
+                      <span className="block text-xs text-gray-400 font-medium">
+                        {trend.count} bài viết
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* CTA Banner */}

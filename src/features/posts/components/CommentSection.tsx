@@ -31,6 +31,17 @@ function formatRelativeTime(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("vi-VN");
 }
 
+// A comment counts as edited only if updatedAt is meaningfully later than
+// createdAt. The backend often returns updatedAt a few ms after createdAt on
+// creation, so a plain string comparison wrongly flags brand-new comments.
+function isEdited(comment: Comment): boolean {
+  if (!comment.updatedAt) return false;
+  const created = new Date(comment.createdAt).getTime();
+  const updated = new Date(comment.updatedAt).getTime();
+  if (Number.isNaN(created) || Number.isNaN(updated)) return false;
+  return updated - created > 2000; // > 2s apart = genuinely edited
+}
+
 function AuthorAvatar({ author, size = 8 }: { author?: Comment["author"]; size?: number }) {
   const fetched = useAuthorAvatar(author?.avatar ? null : author?.id);
   const avatar = author?.avatar ?? fetched;
@@ -306,7 +317,7 @@ function CommentItem({
             <span className="text-xs text-gray-400 font-medium">
               {formatRelativeTime(comment.createdAt)}
             </span>
-            {comment.updatedAt && comment.updatedAt !== comment.createdAt && (
+            {isEdited(comment) && (
               <span className="text-xs text-gray-300 font-medium">(đã sửa)</span>
             )}
           </div>

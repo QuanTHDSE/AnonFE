@@ -29,6 +29,7 @@ import { followService, type FollowStats } from "@/services/followService";
 import { postService } from "@/services/postService";
 import { commentService } from "@/services/commentService";
 import { userService, type UserProfile } from "@/services/userService";
+import { anonImageService, type AnonImage } from "@/services/anonImageService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
@@ -189,6 +190,10 @@ export function ProfileView() {
   const [editError, setEditError] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  const [anonImages, setAnonImages] = useState<AnonImage[]>([]);
+  const [isLoadingAnonImages, setIsLoadingAnonImages] = useState(false);
+  const [selectedAnonImageId, setSelectedAnonImageId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!user) return;
     setIsLoading(true);
@@ -212,8 +217,18 @@ export function ProfileView() {
     setEditIsAnonDefault(false);
     setAvatarFile(null);
     setAvatarPreview(profile?.avatarUrl ?? "");
+    setSelectedAnonImageId(profile?.anonImageId ?? null);
     setEditError("");
     setIsEditOpen(true);
+
+    if (anonImages.length === 0) {
+      setIsLoadingAnonImages(true);
+      anonImageService
+        .getAnonImages(true)
+        .then(setAnonImages)
+        .catch(() => {})
+        .finally(() => setIsLoadingAnonImages(false));
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,6 +249,10 @@ export function ProfileView() {
         anonAlias: editAnonAlias || null,
         isAnonDefault: editIsAnonDefault,
       });
+      // Assign the picked anonymous avatar if it changed
+      if (selectedAnonImageId && selectedAnonImageId !== (profile?.anonImageId ?? null)) {
+        await anonImageService.setMyAnonImage(selectedAnonImageId);
+      }
       setIsEditOpen(false);
       const updated = await userService.getMe();
       setProfile(updated);
@@ -588,6 +607,56 @@ export function ProfileView() {
               />
               <p className="text-xs text-gray-400 font-medium ml-1">
                 Tên này hiển thị khi bạn đăng bài ẩn danh
+              </p>
+            </div>
+
+            {/* Anonymous avatar picker */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">Ảnh đại diện ẩn danh</label>
+              {isLoadingAnonImages ? (
+                <div className="flex items-center gap-2 text-sm text-gray-400 font-medium py-3">
+                  <Loader2 size={15} className="animate-spin" />
+                  Đang tải thư viện...
+                </div>
+              ) : anonImages.length === 0 ? (
+                <p className="text-xs text-gray-400 font-medium py-2">
+                  Chưa có ảnh ẩn danh nào trong thư viện.
+                </p>
+              ) : (
+                <div className="grid grid-cols-5 gap-2.5 max-h-44 overflow-y-auto p-1">
+                  {anonImages.map((img) => {
+                    const selected = img.id === selectedAnonImageId;
+                    return (
+                      <button
+                        key={img.id}
+                        type="button"
+                        onClick={() => setSelectedAnonImageId(selected ? null : img.id)}
+                        title={img.name}
+                        className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${
+                          selected
+                            ? "border-[#F15B29] ring-2 ring-[#F15B29]/20"
+                            : "border-transparent hover:border-orange-200"
+                        }`}
+                      >
+                        <img
+                          src={img.imageUrl}
+                          alt={img.name}
+                          className="w-full h-full object-cover"
+                        />
+                        {selected && (
+                          <span className="absolute inset-0 bg-[#F15B29]/15 flex items-center justify-center">
+                            <span className="w-5 h-5 rounded-full bg-[#F15B29] text-white flex items-center justify-center text-[11px] font-extrabold">
+                              ✓
+                            </span>
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="text-xs text-gray-400 font-medium ml-1">
+                Ảnh này hiển thị khi bạn đăng bài hoặc bình luận ẩn danh
               </p>
             </div>
 

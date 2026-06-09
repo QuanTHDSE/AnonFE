@@ -7,6 +7,8 @@ export interface UserProfile {
   avatarUrl?: string | null;
   bio?: string | null;
   anonAlias: string;
+  anonImageId?: string | null;
+  anonImageUrl?: string | null;
   role: string;
   createdAt: string;
   isPremium?: boolean;

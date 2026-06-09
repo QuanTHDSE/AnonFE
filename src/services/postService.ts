@@ -19,6 +19,12 @@ export interface GetPostsParams {
   authorId?: string;
 }
 
+export interface TrendingTag {
+  tag: string;
+  count: number;
+  engagement: number;
+}
+
 interface RawPostItem {
   id: string;
   title: string;
@@ -130,6 +136,28 @@ export const postService = {
 
   async getTrends(): Promise<string[]> {
     return [];
+  },
+
+  // Trending tags computed from a recent sample of posts. The backend has no
+  // dedicated trending endpoint, so we score tags by how many posts use them
+  // weighted by engagement (upvotes + comments).
+  async getTrendingTags(limit = 7): Promise<TrendingTag[]> {
+    const { posts } = await this.getPosts({ pageSize: 100 });
+    const score = new Map<string, { count: number; engagement: number }>();
+    for (const post of posts) {
+      for (const tag of post.tags ?? []) {
+        const key = tag.trim();
+        if (!key) continue;
+        const entry = score.get(key) ?? { count: 0, engagement: 0 };
+        entry.count += 1;
+        entry.engagement += post.likesCount + post.commentsCount;
+        score.set(key, entry);
+      }
+    }
+    return [...score.entries()]
+      .map(([tag, { count, engagement }]) => ({ tag, count, engagement }))
+      .sort((a, b) => b.engagement - a.engagement || b.count - a.count)
+      .slice(0, limit);
   },
 
   async getSavedPosts(): Promise<SavedPost[]> {

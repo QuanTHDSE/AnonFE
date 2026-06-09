@@ -13,11 +13,38 @@ export interface Permission {
   isActive: boolean;
 }
 
-function toList<T>(res: unknown): T[] {
-  if (Array.isArray(res)) return res as T[];
+function toRawList(res: unknown): Record<string, unknown>[] {
+  if (Array.isArray(res)) return res as Record<string, unknown>[];
   const obj = res as Record<string, unknown>;
   const list = obj.items ?? obj.roles ?? obj.permissions ?? obj.data ?? obj.results ?? [];
-  return (Array.isArray(list) ? list : []) as T[];
+  return (Array.isArray(list) ? list : []) as Record<string, unknown>[];
+}
+
+function toList<T>(res: unknown): T[] {
+  return toRawList(res) as T[];
+}
+
+function str(v: unknown): string | undefined {
+  return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+// Role-permission endpoints may return the join entity (with its own `id` plus a
+// `permissionId`) or a nested `permission` object, while the permissions list
+// returns the permission's own `id`. Normalize so the same permission resolves
+// to the same id from every endpoint — otherwise checkboxes never match.
+function normalizePermission(raw: Record<string, unknown>): Permission {
+  const nested = raw["permission"] as Record<string, unknown> | undefined;
+  const id = str(raw["permissionId"]) ?? str(nested?.["id"]) ?? str(raw["id"]) ?? "";
+  const code =
+    str(raw["code"]) ??
+    str(nested?.["code"]) ??
+    str(raw["name"]) ??
+    str(raw["permissionCode"]) ??
+    str(nested?.["name"]) ??
+    "";
+  const description = str(raw["description"]) ?? str(nested?.["description"]) ?? null;
+  const isActive = (raw["isActive"] as boolean) ?? (nested?.["isActive"] as boolean) ?? true;
+  return { id, code, description, isActive };
 }
 
 export const roleService = {
@@ -38,7 +65,10 @@ export const roleService = {
   },
 
   async getRolePermissions(roleId: string): Promise<Permission[]> {
-    return toList<Permission>(await apiClient.get<unknown>(`/api/v1/roles/${roleId}/permissions`));
+    const res = await apiClient.get<unknown>(`/api/v1/roles/${roleId}/permissions`);
+    return toRawList(res)
+      .map(normalizePermission)
+      .filter((p) => p.id);
   },
 
   async addPermissionToRole(roleId: string, permissionId: string): Promise<void> {
@@ -55,7 +85,10 @@ export const roleService = {
   },
 
   async getPermissions(): Promise<Permission[]> {
-    return toList<Permission>(await apiClient.get<unknown>("/api/v1/permissions"));
+    const res = await apiClient.get<unknown>("/api/v1/permissions");
+    return toRawList(res)
+      .map(normalizePermission)
+      .filter((p) => p.id);
   },
 
   async createPermission(payload: {
