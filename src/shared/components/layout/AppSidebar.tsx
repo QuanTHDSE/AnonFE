@@ -8,7 +8,6 @@ import {
   Settings,
   Shield,
   TrendingUp,
-  UserRound,
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -51,8 +50,9 @@ function SidebarItem({ icon: Icon, active = false, onClick }: SidebarItemProps) 
 
 export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
   const navigate = useNavigate();
-  const { isLoggedIn, isAdmin } = useAuth();
+  const { isLoggedIn, isAdmin, userAvatarUrl, user } = useAuth();
   const goProtected = (path: string) => navigate(isLoggedIn ? path : "/signin");
+  const initials = user?.name?.slice(0, 2).toUpperCase() ?? "?";
 
   return (
     <aside className="hidden lg:flex sticky top-0 h-screen w-20 xl:w-24 bg-white border-r border-gray-100 flex-col items-center py-8 z-50">
@@ -91,11 +91,35 @@ export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
         />
         {isLoggedIn && (
           <>
-            <SidebarItem
-              icon={UserRound}
-              active={activeItem === "profile"}
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate("/profile")}
-            />
+              className={`p-1 rounded-full cursor-pointer transition-all ${
+                activeItem === "profile"
+                  ? "ring-2 ring-[#F15B29] ring-offset-2"
+                  : "hover:ring-2 hover:ring-gray-200 hover:ring-offset-2"
+              }`}
+              title="Trang cá nhân"
+            >
+              {userAvatarUrl ? (
+                <img
+                  src={userAvatarUrl}
+                  alt={user?.name ?? "avatar"}
+                  className="w-9 h-9 xl:w-10 xl:h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className={`w-9 h-9 xl:w-10 xl:h-10 rounded-full flex items-center justify-center ${
+                    activeItem === "profile"
+                      ? "bg-[#F15B29] text-white"
+                      : "bg-orange-100 text-[#F15B29]"
+                  }`}
+                >
+                  <span className="text-xs font-extrabold">{initials}</span>
+                </div>
+              )}
+            </motion.div>
             <motion.div
               whileHover={{ scale: 1.1, rotate: 90 }}
               whileTap={{ scale: 0.95 }}

@@ -16,9 +16,11 @@ import { Link, useNavigate } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
 import { bookmarkService } from "@/services/bookmarkService";
+import { commentService } from "@/services/commentService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
+import { useAuthorAvatar } from "@/shared/hooks/useAuthorAvatar";
 import type { FeedPostItem } from "@/types";
 
 function formatRelativeTime(dateStr: string): string {
@@ -44,15 +46,27 @@ const PostCard = ({
 }) => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
+  const authorAvatar = useAuthorAvatar(post.isAnonymous ? null : post.authorId);
+  const authorInitials = post.author?.name?.slice(0, 2).toUpperCase() ?? "??";
+
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [hasUpvoted, setHasUpvoted] = useState(post.hasUpvoted ?? false);
   const [isUpvoting, setIsUpvoting] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(() => bookmarkedPostIds.has(post.id));
   const [isBookmarking, setIsBookmarking] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(post.commentsCount);
 
   useEffect(() => {
     setIsBookmarked(bookmarkedPostIds.has(post.id));
   }, [bookmarkedPostIds, post.id]);
+
+  useEffect(() => {
+    commentService
+      .getComments(post.id, 1, 1)
+      .then(({ total }) => setCommentsCount(total))
+      .catch(() => {});
+  }, [post.id]);
+
   const images = post.images ?? [];
   const tags = post.tags ?? [];
 
@@ -107,16 +121,20 @@ const PostCard = ({
       {/* Post Header */}
       <div className="flex items-center justify-between p-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-            {post.author?.avatar ? (
+          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+            {authorAvatar ? (
               <img
-                src={post.author.avatar}
-                alt={post.author.name}
+                src={authorAvatar}
+                alt={post.author?.name ?? "avatar"}
                 className="w-full h-full object-cover"
               />
-            ) : (
+            ) : post.isAnonymous ? (
               <div className="text-gray-400">
                 <Users size={24} />
+              </div>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
+                <span className="text-sm font-extrabold text-[#F15B29]">{authorInitials}</span>
               </div>
             )}
           </div>
@@ -209,7 +227,7 @@ const PostCard = ({
           </button>
           <button className="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition-colors">
             <MessageSquare size={20} />
-            <span className="text-sm font-semibold">{post.commentsCount}</span>
+            <span className="text-sm font-semibold">{commentsCount}</span>
           </button>
           <button className="text-gray-500 hover:text-green-500 transition-colors">
             <Share2 size={20} />
@@ -224,7 +242,7 @@ const PAGE_SIZE = 10;
 
 export function HomeView() {
   const navigate = useNavigate();
-  const { isLoggedIn, user, isPremium, logout } = useAuth();
+  const { isLoggedIn, user, isPremium, logout, userAvatarUrl } = useAuth();
 
   const [posts, setPosts] = useState<FeedPostItem[]>([]);
   const [trends, setTrends] = useState<string[]>([]);
@@ -349,8 +367,16 @@ export function HomeView() {
 
                       {/* User Profile Info */}
                       <div className="flex items-center gap-2 pl-2 pr-4 py-1.5 bg-white border border-gray-200 rounded-full hover:bg-gray-50 transition-colors shadow-sm cursor-pointer">
-                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-[#F15B29]">
-                          <User size={16} strokeWidth={2.5} />
+                        <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-[#F15B29] overflow-hidden">
+                          {userAvatarUrl ? (
+                            <img
+                              src={userAvatarUrl}
+                              alt={user?.name ?? "avatar"}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User size={16} strokeWidth={2.5} />
+                          )}
                         </div>
                         <span className="text-sm font-bold text-gray-700 hidden sm:block">
                           {user?.name ?? "User"}

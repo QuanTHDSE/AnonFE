@@ -4,8 +4,10 @@ import { motion } from "motion/react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";
 import { bookmarkService, type BookmarkPost } from "@/services/bookmarkService";
+import { commentService } from "@/services/commentService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
+import { useAuthorAvatar } from "@/shared/hooks/useAuthorAvatar";
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("vi-VN", {
@@ -24,6 +26,16 @@ function BookmarkCard({
 }) {
   const navigate = useNavigate();
   const [removing, setRemoving] = useState(false);
+  const authorAvatar = useAuthorAvatar(item.isAnonymous ? null : item.author?.id);
+  const authorInitials = item.author?.name?.slice(0, 2).toUpperCase() ?? "??";
+  const [commentsCount, setCommentsCount] = useState(item.commentsCount ?? 0);
+
+  useEffect(() => {
+    commentService
+      .getComments(item.postId, 1, 1)
+      .then(({ total }) => setCommentsCount(total))
+      .catch(() => {});
+  }, [item.postId]);
 
   const handleRemove = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -38,7 +50,7 @@ function BookmarkCard({
   };
 
   const images = item.images ?? [];
-  const displayName = item.isAnonymous ? "Ẩn danh" : item.author?.name || "Người dùng";
+  const displayName = item.author?.name ?? (item.isAnonymous ? "Ẩn danh" : "Người dùng");
 
   return (
     <motion.div
@@ -51,17 +63,15 @@ function BookmarkCard({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden shrink-0">
-            {item.author?.avatar ? (
-              <img
-                src={item.author.avatar}
-                alt={displayName}
-                className="w-full h-full object-cover"
-              />
-            ) : (
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center overflow-hidden shrink-0">
+            {authorAvatar ? (
+              <img src={authorAvatar} alt={displayName} className="w-full h-full object-cover" />
+            ) : item.isAnonymous ? (
               <span className="text-sm font-extrabold text-[#F15B29]">
                 {displayName.charAt(0).toUpperCase()}
               </span>
+            ) : (
+              <span className="text-sm font-extrabold text-[#F15B29]">{authorInitials}</span>
             )}
           </div>
           <div>
@@ -135,7 +145,7 @@ function BookmarkCard({
           </div>
           <div className="flex items-center gap-1.5">
             <MessageSquare size={14} />
-            <span className="text-xs font-bold">{item.commentsCount ?? 0}</span>
+            <span className="text-xs font-bold">{commentsCount}</span>
           </div>
         </div>
       </div>

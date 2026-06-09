@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
+import { useAuthorAvatar } from "@/shared/hooks/useAuthorAvatar";
 import { postService } from "@/services/postService";
 import { bookmarkService } from "@/services/bookmarkService";
 import { CommentSection } from "@/features/posts/components/CommentSection";
@@ -38,6 +39,7 @@ export function PostDetailView() {
   const navigate = useNavigate();
   const { user, isLoggedIn } = useAuth();
   const [post, setPost] = useState<FeedPostItem | null>(null);
+  const authorAvatar = useAuthorAvatar(post?.isAnonymous ? null : post?.authorId);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
@@ -223,10 +225,10 @@ export function PostDetailView() {
                   <div className="flex items-start justify-between mb-6 gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-                        {post.author?.avatar ? (
+                        {!post.isAnonymous && authorAvatar ? (
                           <img
-                            src={post.author.avatar}
-                            alt={post.author.name}
+                            src={authorAvatar}
+                            alt={post.author?.name}
                             className="w-full h-full object-cover"
                           />
                         ) : (

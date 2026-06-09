@@ -34,19 +34,30 @@ function extractPost(raw: Record<string, unknown>): BookmarkPost {
   // or may return the post directly with bookmarkId etc.
   const embedded = raw["post"] as Record<string, unknown> | undefined;
   const source = embedded ?? raw;
+  const isAnon = (source["isAnonymous"] as boolean) ?? false;
 
-  const authorRaw = source["author"] as Record<string, unknown> | undefined;
-  const author = authorRaw
-    ? {
-        id: str(authorRaw["id"]) ?? str(raw["authorId"]) ?? "",
-        name:
-          str(authorRaw["name"]) ??
-          str(authorRaw["username"]) ??
-          str(raw["authorUsername"]) ??
-          "Ẩn danh",
-        avatar: str(authorRaw["avatar"]) ?? str(authorRaw["avatarUrl"]) ?? undefined,
-      }
-    : null;
+  const authorRaw = source["author"] as Record<string, unknown> | undefined | null;
+  let authorName: string;
+  let authorId: string;
+  let authorAvatar: string | undefined;
+
+  if (authorRaw) {
+    authorId = str(authorRaw["id"]) ?? str(source["authorId"]) ?? "";
+    authorAvatar = str(authorRaw["avatar"]) ?? str(authorRaw["avatarUrl"]) ?? undefined;
+    authorName = isAnon
+      ? (str(source["authorAnonAlias"]) ?? str(authorRaw["name"]) ?? "Ẩn danh")
+      : (str(authorRaw["name"]) ??
+        str(authorRaw["username"]) ??
+        str(source["authorUsername"]) ??
+        "Người dùng");
+  } else {
+    authorId = str(source["authorId"]) ?? "";
+    authorAvatar = undefined;
+    authorName = isAnon
+      ? (str(source["authorAnonAlias"]) ?? "Ẩn danh")
+      : (str(source["authorUsername"]) ?? "Người dùng");
+  }
+  const author = { id: authorId, name: authorName, avatar: authorAvatar };
 
   const subjectRaw = source["subject"] as Record<string, unknown> | undefined;
   const subject: Subject | null = subjectRaw

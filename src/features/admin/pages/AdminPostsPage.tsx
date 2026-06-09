@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Loader2, Search, Trash2 } from "lucide-react";
+import { Heart, Loader2, MessageSquare, Search, Trash2 } from "lucide-react";
 import { postService } from "@/services/postService";
 import type { FeedPostItem } from "@/types";
 import {
@@ -126,6 +126,14 @@ export function AdminPostsView() {
               <TableHead className="font-bold text-gray-500">Tác giả</TableHead>
               <TableHead className="font-bold text-gray-500">Môn học</TableHead>
               <TableHead className="font-bold text-gray-500">Ngày đăng</TableHead>
+              <TableHead className="font-bold text-gray-500 text-center">
+                <Heart size={14} className="inline mr-1" />
+                Likes
+              </TableHead>
+              <TableHead className="font-bold text-gray-500 text-center">
+                <MessageSquare size={14} className="inline mr-1" />
+                Comments
+              </TableHead>
               <TableHead className="font-bold text-gray-500 text-center">Ẩn danh</TableHead>
               <TableHead className="w-16 font-bold text-gray-500" />
             </TableRow>
@@ -148,6 +156,12 @@ export function AdminPostsView() {
                     </TableCell>
                     <TableCell>
                       <div className="h-4 bg-gray-100 rounded w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-8 mx-auto" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 bg-gray-100 rounded w-8 mx-auto" />
                     </TableCell>
                     <TableCell>
                       <div className="h-4 bg-gray-100 rounded-full w-4 mx-auto" />
@@ -186,6 +200,18 @@ export function AdminPostsView() {
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 font-medium">
                       {formatDate(post.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="flex items-center justify-center gap-1 text-sm font-semibold text-red-400">
+                        <Heart size={13} className="fill-red-300" />
+                        {post.likesCount}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="flex items-center justify-center gap-1 text-sm font-semibold text-blue-400">
+                        <MessageSquare size={13} />
+                        {post.commentsCount}
+                      </span>
                     </TableCell>
                     <TableCell className="text-center">
                       <span

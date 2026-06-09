@@ -15,7 +15,7 @@ export interface UserProfile {
 export interface UpdateUserPayload {
   username?: string | null;
   bio?: string | null;
-  avatarUrl?: string | null;
+  avatarFile?: File | null;
   anonAlias?: string | null;
   isAnonDefault?: boolean | null;
 }
@@ -42,10 +42,19 @@ export const userService = {
   },
 
   async updateMe(payload: UpdateUserPayload): Promise<UserProfile> {
-    return apiClient.put<UserProfile>("/api/v1/users/me", payload);
+    const form = new FormData();
+    if (payload.username != null) form.append("Username", payload.username);
+    if (payload.bio != null) form.append("Bio", payload.bio);
+    if (payload.avatarFile) form.append("Avatar", payload.avatarFile);
+    if (payload.anonAlias != null) form.append("AnonAlias", payload.anonAlias);
+    if (payload.isAnonDefault != null) form.append("IsAnonDefault", String(payload.isAnonDefault));
+    return apiClient.putForm<UserProfile>("/api/v1/users/me", form);
   },
 
-  async updateUser(id: string, payload: UpdateUserPayload): Promise<UserProfile> {
+  async updateUser(
+    id: string,
+    payload: Omit<UpdateUserPayload, "avatarFile">,
+  ): Promise<UserProfile> {
     return apiClient.put<UserProfile>(`/api/v1/users/${id}`, payload);
   },
 
@@ -53,3 +62,32 @@ export const userService = {
     await apiClient.delete(`/api/v1/users/${id}`);
   },
 };
+
+// --- Author avatar cache -----------------------------------------------------
+// The posts/comments APIs don't return author avatars, so we fetch them from
+// GET /api/v1/users/{id} and cache the result to avoid duplicate requests when
+// the same author appears across many cards.
+const avatarCache = new Map<string, string | null>();
+const avatarInflight = new Map<string, Promise<string | null>>();
+
+export async function getUserAvatar(id: string): Promise<string | null> {
+  if (!id) return null;
+  if (avatarCache.has(id)) return avatarCache.get(id) ?? null;
+  const existing = avatarInflight.get(id);
+  if (existing) return existing;
+  const promise = userService
+    .getUserById(id)
+    .then((u) => {
+      const avatar = u.avatarUrl ?? null;
+      avatarCache.set(id, avatar);
+      avatarInflight.delete(id);
+      return avatar;
+    })
+    .catch(() => {
+      avatarCache.set(id, null);
+      avatarInflight.delete(id);
+      return null;
+    });
+  avatarInflight.set(id, promise);
+  return promise;
+}

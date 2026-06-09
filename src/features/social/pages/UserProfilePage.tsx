@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/features/auth/AuthContext";
 import { followService, type FollowStats } from "@/services/followService";
 import { postService } from "@/services/postService";
+import { commentService } from "@/services/commentService";
 import { userService, type UserProfile } from "@/services/userService";
 import { fetchPremiumStatusSafe } from "@/services/subscriptionService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
@@ -39,6 +40,89 @@ function formatRelativeTime(dateStr: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d`;
   return `${Math.floor(days / 7)}w`;
+}
+
+function PostCardItem({ post }: { post: FeedPostItem }) {
+  const images = post.images ?? [];
+  const tags = post.tags ?? [];
+  const [commentsCount, setCommentsCount] = useState(post.commentsCount);
+
+  useEffect(() => {
+    commentService
+      .getComments(post.id, 1, 1)
+      .then(({ total }) => setCommentsCount(total))
+      .catch(() => {});
+  }, [post.id]);
+
+  return (
+    <motion.div
+      key={post.id}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+    >
+      {images.length > 0 && (
+        <Link to={`/posts/${post.id}`} className="block">
+          <div className="relative aspect-video overflow-hidden bg-gray-50">
+            <ImageWithFallback
+              src={images[0]}
+              alt={post.title}
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            />
+            {images.length > 1 && (
+              <span className="absolute bottom-2 right-2 text-xs font-bold bg-black/50 text-white px-2 py-0.5 rounded-full">
+                +{images.length - 1}
+              </span>
+            )}
+          </div>
+        </Link>
+      )}
+      <div className="p-5">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
+              {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
+            </span>
+            {post.isAnonymous && (
+              <span className="text-xs font-bold px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full">
+                Ẩn danh
+              </span>
+            )}
+          </div>
+          <span className="text-xs text-gray-400 font-medium">
+            {formatRelativeTime(post.createdAt)}
+          </span>
+        </div>
+        <Link to={`/posts/${post.id}`} className="group block mb-2">
+          <h3 className="font-bold text-gray-900 group-hover:text-[#F15B29] transition-colors line-clamp-2 leading-snug">
+            {post.title}
+          </h3>
+        </Link>
+        <p className="text-sm text-gray-500 font-medium line-clamp-2 mb-4 leading-relaxed">
+          {post.content}
+        </p>
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {tags.slice(0, 4).map((tag) => (
+              <span key={tag} className="text-xs text-[#F15B29] font-semibold">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-5 pt-3 border-t border-gray-100">
+          <span className="flex items-center gap-1.5 text-gray-400 text-sm">
+            <Heart size={15} />
+            <span className="font-semibold">{post.likesCount}</span>
+          </span>
+          <span className="flex items-center gap-1.5 text-gray-400 text-sm">
+            <MessageSquare size={15} />
+            <span className="font-semibold">{commentsCount}</span>
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
 export function UserProfileView() {
@@ -80,7 +164,7 @@ export function UserProfileView() {
     ])
       .then(([prof, postsRes, stats]) => {
         setProfile(prof);
-        setPosts(postsRes.posts.filter((p) => !p.isAnonymous && p.author?.id === profileId));
+        setPosts(postsRes.posts.filter((p) => p.authorId === profileId));
         setFollowStats(stats);
         // Use isPremium from user profile API if backend provides it, otherwise try subscription check
         if (prof.isPremium) {
@@ -209,7 +293,7 @@ export function UserProfileView() {
                       </div>
                       <div className="flex items-center gap-1.5 font-bold text-gray-700">
                         <FileText size={14} className="text-[#F15B29]" />
-                        {posts.length} bài viết công khai
+                        {posts.length} bài viết
                       </div>
                     </div>
 
@@ -265,9 +349,9 @@ export function UserProfileView() {
         {!isLoading && profile && (
           <>
             <div className="mb-6">
-              <h2 className="text-xl font-extrabold text-gray-900">Bài viết công khai</h2>
+              <h2 className="text-xl font-extrabold text-gray-900">Bài viết</h2>
               <p className="text-sm text-gray-400 font-medium mt-0.5">
-                Chỉ hiển thị bài viết không ẩn danh
+                Bao gồm cả bài đăng ẩn danh
               </p>
             </div>
 
@@ -279,72 +363,9 @@ export function UserProfileView() {
             ) : (
               <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <AnimatePresence>
-                  {posts.map((post) => {
-                    const images = post.images ?? [];
-                    const tags = post.tags ?? [];
-                    return (
-                      <motion.div
-                        key={post.id}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        {images.length > 0 && (
-                          <Link to={`/posts/${post.id}`} className="block">
-                            <div className="relative aspect-video overflow-hidden bg-gray-50">
-                              <ImageWithFallback
-                                src={images[0]}
-                                alt={post.title}
-                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                              />
-                              {images.length > 1 && (
-                                <span className="absolute bottom-2 right-2 text-xs font-bold bg-black/50 text-white px-2 py-0.5 rounded-full">
-                                  +{images.length - 1}
-                                </span>
-                              )}
-                            </div>
-                          </Link>
-                        )}
-                        <div className="p-5">
-                          <div className="flex items-center justify-between mb-3 gap-2">
-                            <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100 shrink-0">
-                              {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
-                            </span>
-                            <span className="text-xs text-gray-400 font-medium">
-                              {formatRelativeTime(post.createdAt)}
-                            </span>
-                          </div>
-                          <Link to={`/posts/${post.id}`} className="group block mb-2">
-                            <h3 className="font-bold text-gray-900 group-hover:text-[#F15B29] transition-colors line-clamp-2 leading-snug">
-                              {post.title}
-                            </h3>
-                          </Link>
-                          <p className="text-sm text-gray-500 font-medium line-clamp-2 mb-4 leading-relaxed">
-                            {post.content}
-                          </p>
-                          {tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mb-3">
-                              {tags.slice(0, 4).map((tag) => (
-                                <span key={tag} className="text-xs text-[#F15B29] font-semibold">
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          <div className="flex items-center gap-5 pt-3 border-t border-gray-100">
-                            <span className="flex items-center gap-1.5 text-gray-400 text-sm">
-                              <Heart size={15} />
-                              <span className="font-semibold">{post.likesCount}</span>
-                            </span>
-                            <span className="flex items-center gap-1.5 text-gray-400 text-sm">
-                              <MessageSquare size={15} />
-                              <span className="font-semibold">{post.commentsCount}</span>
-                            </span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                  {posts.map((post) => (
+                    <PostCardItem key={post.id} post={post} />
+                  ))}
                 </AnimatePresence>
               </motion.div>
             )}

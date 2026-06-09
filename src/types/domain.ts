@@ -134,6 +134,8 @@ export interface FeedPostItem {
   tags?: string[] | null;
   isAnonymous: boolean;
   subject?: Subject | null;
+  /** Real author id from the backend, kept even for anonymous posts (for owner-scoped filtering). Do not use for display. */
+  authorId?: string;
   author?: {
     id: string;
     name: string;

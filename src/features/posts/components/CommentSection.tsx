@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { commentService, type Comment } from "@/services/commentService";
+import { useAuthorAvatar } from "@/shared/hooks/useAuthorAvatar";
 import { Link, useNavigate } from "react-router";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -31,8 +32,10 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 function AuthorAvatar({ author, size = 8 }: { author?: Comment["author"]; size?: number }) {
+  const fetched = useAuthorAvatar(author?.avatar ? null : author?.id);
+  const avatar = author?.avatar ?? fetched;
   const cls = `w-${size} h-${size} rounded-full object-cover border border-gray-100`;
-  if (author?.avatar) return <img src={author.avatar} alt={author.name} className={cls} />;
+  if (avatar) return <img src={avatar} alt={author?.name} className={cls} />;
   const initials = author?.name?.slice(0, 2).toUpperCase() ?? "??";
   return (
     <div
@@ -65,7 +68,7 @@ function CommentInput({
   onCancel?: () => void;
   autoFocus?: boolean;
 }) {
-  const { user, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, userAvatarUrl } = useAuth();
   const [content, setContent] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,7 +112,7 @@ function CommentInput({
           : {
               id: comment.author?.id ?? user!.id,
               name: comment.author?.name || user!.name,
-              avatar: comment.author?.avatar ?? undefined,
+              avatar: comment.author?.avatar ?? userAvatarUrl ?? undefined,
             },
       };
       setContent("");
@@ -128,7 +131,14 @@ function CommentInput({
   return (
     <div className="space-y-2">
       <div className="flex gap-3">
-        <AuthorAvatar author={isAnonymous ? null : { id: user!.id, name: user!.name }} size={9} />
+        <AuthorAvatar
+          author={
+            isAnonymous
+              ? null
+              : { id: user!.id, name: user!.name, avatar: userAvatarUrl ?? undefined }
+          }
+          size={9}
+        />
         <div className="flex-1 space-y-2">
           <textarea
             ref={textareaRef}

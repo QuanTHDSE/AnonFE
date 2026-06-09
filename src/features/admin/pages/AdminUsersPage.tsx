@@ -145,7 +145,7 @@ export function AdminUsersView() {
 
   const openEdit = (user: UserProfile) => {
     setEditingUser(user);
-    setEditForm({ username: user.username, bio: user.bio ?? "", avatarUrl: user.avatarUrl ?? "" });
+    setEditForm({ username: user.username, bio: user.bio ?? "" });
     setEditError("");
   };
 
@@ -398,16 +398,6 @@ export function AdminUsersView() {
                 rows={3}
                 className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium resize-none"
                 placeholder="Giới thiệu bản thân..."
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-gray-700">Avatar URL</label>
-              <input
-                type="text"
-                value={editForm.avatarUrl ?? ""}
-                onChange={(e) => setEditForm((f) => ({ ...f, avatarUrl: e.target.value }))}
-                className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium"
-                placeholder="https://..."
               />
             </div>
             {editError && (

@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import {
   AlertTriangle,
   ArrowLeft,
   Calendar,
+  Camera,
   FileText,
   Heart,
   Loader2,
@@ -26,7 +27,8 @@ import {
 import { useAuth } from "@/features/auth/AuthContext";
 import { followService, type FollowStats } from "@/services/followService";
 import { postService } from "@/services/postService";
-import { userService, type UpdateUserPayload, type UserProfile } from "@/services/userService";
+import { commentService } from "@/services/commentService";
+import { userService, type UserProfile } from "@/services/userService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
@@ -61,6 +63,15 @@ interface PostCardProps {
 const PostCard = ({ post, onEdit, onDelete }: PostCardProps) => {
   const images = post.images ?? [];
   const tags = post.tags ?? [];
+  const [commentsCount, setCommentsCount] = useState(post.commentsCount);
+
+  useEffect(() => {
+    commentService
+      .getComments(post.id, 1, 1)
+      .then(({ total }) => setCommentsCount(total))
+      .catch(() => {});
+  }, [post.id]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -86,11 +97,17 @@ const PostCard = ({ post, onEdit, onDelete }: PostCardProps) => {
       )}
 
       <div className="p-5">
-        {/* Subject + time + actions */}
         <div className="flex items-center justify-between mb-3 gap-2">
-          <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100 shrink-0">
-            {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
+              {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
+            </span>
+            {post.isAnonymous && (
+              <span className="text-xs font-bold px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full">
+                Ẩn danh
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-1 ml-auto">
             <span className="text-xs text-gray-400 font-medium mr-1">
               {formatRelativeTime(post.createdAt)}
@@ -141,7 +158,7 @@ const PostCard = ({ post, onEdit, onDelete }: PostCardProps) => {
           </span>
           <span className="flex items-center gap-1.5 text-gray-400 text-sm">
             <MessageSquare size={15} />
-            <span className="font-semibold">{post.commentsCount}</span>
+            <span className="font-semibold">{commentsCount}</span>
           </span>
         </div>
       </div>
@@ -151,7 +168,7 @@ const PostCard = ({ post, onEdit, onDelete }: PostCardProps) => {
 
 export function ProfileView() {
   const navigate = useNavigate();
-  const { user, isPremium } = useAuth();
+  const { user, isPremium, refreshProfile } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<FeedPostItem[]>([]);
@@ -162,9 +179,15 @@ export function ProfileView() {
   const [deleteError, setDeleteError] = useState("");
 
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState<UpdateUserPayload>({});
+  const [editUsername, setEditUsername] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editAnonAlias, setEditAnonAlias] = useState("");
+  const [editIsAnonDefault, setEditIsAnonDefault] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState("");
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -176,32 +199,45 @@ export function ProfileView() {
     ])
       .then(([prof, postsRes, stats]) => {
         setProfile(prof);
-        setPosts(postsRes.posts.filter((p) => !p.isAnonymous && p.author?.id === user.id));
+        setPosts(postsRes.posts.filter((p) => p.authorId === user.id));
         setFollowStats(stats);
       })
       .finally(() => setIsLoading(false));
   }, [user]);
 
   const openEdit = () => {
-    setEditForm({
-      username: profile?.username ?? "",
-      bio: profile?.bio ?? "",
-      avatarUrl: profile?.avatarUrl ?? "",
-      anonAlias: profile?.anonAlias ?? "",
-      isAnonDefault: false,
-    });
+    setEditUsername(profile?.username ?? "");
+    setEditBio(profile?.bio ?? "");
+    setEditAnonAlias(profile?.anonAlias ?? "");
+    setEditIsAnonDefault(false);
+    setAvatarFile(null);
+    setAvatarPreview(profile?.avatarUrl ?? "");
     setEditError("");
     setIsEditOpen(true);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
     setEditError("");
     try {
-      await userService.updateMe(editForm);
+      await userService.updateMe({
+        username: editUsername || null,
+        bio: editBio || null,
+        avatarFile: avatarFile ?? null,
+        anonAlias: editAnonAlias || null,
+        isAnonDefault: editIsAnonDefault,
+      });
       setIsEditOpen(false);
       const updated = await userService.getMe();
       setProfile(updated);
+      refreshProfile();
     } catch (err) {
       setEditError(err instanceof Error ? err.message : "Cập nhật thất bại.");
     } finally {
@@ -233,7 +269,6 @@ export function ProfileView() {
       <AppSidebar activeItem="profile" />
 
       <main className="flex-1 min-w-0 pt-6 px-4 md:px-8 lg:px-12 max-w-[960px] mx-auto w-full pb-20">
-        {/* Back */}
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-500 hover:text-[#F15B29] transition-colors p-2 -ml-2 rounded-xl group mb-8"
@@ -306,7 +341,7 @@ export function ProfileView() {
                     </div>
                     <div className="flex items-center gap-1.5 font-bold text-gray-700">
                       <FileText size={14} className="text-[#F15B29]" />
-                      {posts.length} bài viết công khai
+                      {posts.length} bài viết
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3 text-sm">
@@ -334,7 +369,7 @@ export function ProfileView() {
           <div>
             <h2 className="text-xl font-extrabold text-gray-900">Bài viết của tôi</h2>
             <p className="text-sm text-gray-400 font-medium mt-0.5">
-              Chỉ hiển thị bài viết công khai (không ẩn danh)
+              Bao gồm cả bài đăng ẩn danh của bạn
             </p>
           </div>
           {!isLoading && posts.length > 0 && (
@@ -428,19 +463,16 @@ export function ProfileView() {
                   <X size={18} />
                 </button>
               </div>
-
               <p className="text-gray-500 font-medium mb-2 leading-relaxed text-sm">
                 Bài viết{" "}
                 <span className="font-bold text-gray-700">&ldquo;{confirmPost?.title}&rdquo;</span>{" "}
                 sẽ bị xóa vĩnh viễn và không thể khôi phục.
               </p>
-
               {deleteError && (
                 <p className="mt-3 text-sm font-bold text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">
                   {deleteError}
                 </p>
               )}
-
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => {
@@ -486,12 +518,49 @@ export function ProfileView() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {/* Avatar upload */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative group">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-orange-100 to-orange-50 border-4 border-orange-100 flex items-center justify-center">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-extrabold text-[#F15B29]">
+                      {editUsername.slice(0, 2).toUpperCase() || initials}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                >
+                  <Camera size={20} className="text-white" />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="text-sm font-bold text-[#F15B29] hover:underline"
+              >
+                Thay đổi ảnh đại diện
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+              {avatarFile && <p className="text-xs text-gray-400 font-medium">{avatarFile.name}</p>}
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-gray-700">Tên người dùng</label>
               <input
                 type="text"
-                value={editForm.username ?? ""}
-                onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
+                value={editUsername}
+                onChange={(e) => setEditUsername(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium"
                 placeholder="Username"
               />
@@ -500,8 +569,8 @@ export function ProfileView() {
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-gray-700">Bio</label>
               <textarea
-                value={editForm.bio ?? ""}
-                onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))}
+                value={editBio}
+                onChange={(e) => setEditBio(e.target.value)}
                 rows={3}
                 className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium resize-none"
                 placeholder="Giới thiệu bản thân..."
@@ -509,42 +578,14 @@ export function ProfileView() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-gray-700">Avatar URL</label>
+              <label className="text-sm font-bold text-gray-700">Tên ẩn danh</label>
               <input
                 type="text"
-                value={editForm.avatarUrl ?? ""}
-                onChange={(e) => setEditForm((f) => ({ ...f, avatarUrl: e.target.value }))}
+                value={editAnonAlias}
+                onChange={(e) => setEditAnonAlias(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium"
-                placeholder="https://..."
+                placeholder="Tên hiển thị khi đăng ẩn danh"
               />
-              {editForm.avatarUrl && (
-                <img
-                  src={editForm.avatarUrl}
-                  alt="preview"
-                  className="mt-2 w-16 h-16 rounded-full object-cover border-2 border-orange-100"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-bold text-gray-700">Tên ẩn danh</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium select-none">
-                  ghost_
-                </span>
-                <input
-                  type="text"
-                  value={(editForm.anonAlias ?? "").replace(/^ghost_/, "")}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, anonAlias: `ghost_${e.target.value}` }))
-                  }
-                  className="w-full pl-14 pr-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-2 focus:ring-[#F15B29]/10 outline-none transition-all text-sm font-medium"
-                  placeholder="xxxx"
-                />
-              </div>
               <p className="text-xs text-gray-400 font-medium ml-1">
                 Tên này hiển thị khi bạn đăng bài ẩn danh
               </p>
@@ -554,8 +595,8 @@ export function ProfileView() {
               <input
                 type="checkbox"
                 id="anonDefault"
-                checked={editForm.isAnonDefault ?? false}
-                onChange={(e) => setEditForm((f) => ({ ...f, isAnonDefault: e.target.checked }))}
+                checked={editIsAnonDefault}
+                onChange={(e) => setEditIsAnonDefault(e.target.checked)}
                 className="w-4 h-4 accent-[#F15B29]"
               />
               <label
