@@ -21,6 +21,7 @@ export function SignInView() {
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/";
   const justRegistered = (location.state as { registered?: boolean })?.registered;
   const justVerified = (location.state as { verified?: boolean })?.verified;
+  const justResetPassword = (location.state as { passwordReset?: boolean })?.passwordReset;
 
   const [googleError, setGoogleError] = useState("");
 
@@ -83,7 +84,13 @@ export function SignInView() {
 
           {/* Form */}
           <form className="space-y-6" onSubmit={handleLogin}>
-            {justVerified && !error && (
+            {justResetPassword && !error && (
+              <div className="p-3 bg-green-50 text-green-600 rounded-xl text-sm font-bold text-center">
+                Đặt lại mật khẩu thành công! Hãy đăng nhập.
+              </div>
+            )}
+
+            {justVerified && !error && !justResetPassword && (
               <div className="p-3 bg-green-50 text-green-600 rounded-xl text-sm font-bold text-center">
                 Email đã được xác minh! Hãy đăng nhập.
               </div>
@@ -122,7 +129,11 @@ export function SignInView() {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <label className="text-sm font-bold text-gray-700">Mật khẩu</label>
-                <button type="button" className="text-sm font-bold text-[#F15B29] hover:underline">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password", { state: { email } })}
+                  className="text-sm font-bold text-[#F15B29] hover:underline"
+                >
                   Quên mật khẩu?
                 </button>
               </div>

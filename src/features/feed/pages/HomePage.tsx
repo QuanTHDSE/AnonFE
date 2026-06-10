@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bell,
   Bookmark,
@@ -20,7 +20,9 @@ import { commentService } from "@/services/commentService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
+import { SubscriptionPeekDialog } from "@/shared/components/SubscriptionPeekDialog";
 import { useAuthorAvatar } from "@/shared/hooks/useAuthorAvatar";
+import { getUserPremium } from "@/services/userService";
 import type { FeedPostItem } from "@/types";
 
 function formatRelativeTime(dateStr: string): string {
@@ -55,6 +57,7 @@ const PostCard = ({
   const [isBookmarked, setIsBookmarked] = useState(() => bookmarkedPostIds.has(post.id));
   const [isBookmarking, setIsBookmarking] = useState(false);
   const [commentsCount, setCommentsCount] = useState(post.commentsCount);
+  const [subPeekOpen, setSubPeekOpen] = useState(false);
 
   useEffect(() => {
     setIsBookmarked(bookmarkedPostIds.has(post.id));
@@ -118,6 +121,15 @@ const PostCard = ({
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow mb-8 max-w-[700px] w-full"
     >
+      {!post.isAnonymous && post.author && (
+        <SubscriptionPeekDialog
+          userId={post.author.id}
+          displayName={post.author.name}
+          open={subPeekOpen}
+          onOpenChange={setSubPeekOpen}
+        />
+      )}
+
       {/* Post Header */}
       <div className="flex items-center justify-between p-6">
         <div className="flex items-center gap-3">
@@ -142,13 +154,24 @@ const PostCard = ({
             {post.isAnonymous ? (
               <h3 className="font-semibold text-gray-900">{post.author?.name ?? "Ẩn danh"}</h3>
             ) : post.author ? (
-              <Link
-                to={`/users/${post.author.id}`}
-                className="font-semibold text-gray-900 hover:text-[#F15B29] transition-colors flex items-center gap-1"
-              >
-                {post.author.name}
-                {premiumUserIds.has(post.author.id) && <PremiumBadge />}
-              </Link>
+              <div className="flex items-center gap-1">
+                <Link
+                  to={`/users/${post.author.id}`}
+                  className="font-semibold text-gray-900 hover:text-[#F15B29] transition-colors"
+                >
+                  {post.author.name}
+                </Link>
+                {premiumUserIds.has(post.author.id) && (
+                  <button
+                    type="button"
+                    onClick={() => setSubPeekOpen(true)}
+                    className="inline-flex hover:opacity-80 transition-opacity"
+                    title="Xem gói đăng ký"
+                  >
+                    <PremiumBadge />
+                  </button>
+                )}
+              </div>
             ) : (
               <h3 className="font-semibold text-gray-900">Người dùng</h3>
             )}
@@ -259,15 +282,33 @@ export function HomeView() {
       .catch(() => {});
   }, [isLoggedIn]);
 
-  // Build set of premium user IDs: own user + any author with isPremium from API
-  const premiumUserIds = useMemo<Set<string>>(() => {
-    const set = new Set<string>();
-    if (isPremium && user?.id) set.add(user.id);
+  // The feed API doesn't return premium status, so resolve it per unique author
+  // (own user is included from auth context). Each author is fetched + cached
+  // once via getUserPremium; results populate the badge set asynchronously.
+  const [premiumUserIds, setPremiumUserIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const ids = new Set<string>();
     for (const post of posts) {
-      if (post.author?.id && post.author.isPremium) set.add(post.author.id);
+      if (!post.isAnonymous && post.author?.id) ids.add(post.author.id);
     }
-    return set;
-  }, [isPremium, user?.id, posts]);
+    let cancelled = false;
+    void (async () => {
+      const entries = await Promise.all(
+        [...ids].map(async (id) => [id, await getUserPremium(id)] as const),
+      );
+      if (cancelled) return;
+      const set = new Set<string>();
+      if (isPremium && user?.id) set.add(user.id);
+      for (const [id, prem] of entries) {
+        if (prem) set.add(id);
+      }
+      setPremiumUserIds(set);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [posts, isPremium, user?.id]);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);

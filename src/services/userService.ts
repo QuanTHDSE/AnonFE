@@ -1,4 +1,5 @@
 import { apiClient } from "@/services/apiClient";
+import { fetchPremiumStatusSafe } from "@/services/subscriptionService";
 
 export interface UserProfile {
   id: string;
@@ -12,6 +13,7 @@ export interface UserProfile {
   role: string;
   createdAt: string;
   isPremium?: boolean;
+  isAnonDefault?: boolean;
 }
 
 export interface UpdateUserPayload {
@@ -43,14 +45,21 @@ export const userService = {
     return apiClient.get<PaginatedUsersResponse>(`/api/v1/users?page=${page}&pageSize=${pageSize}`);
   },
 
+  // PUT /api/v1/users/me accepts Username, Bio, Avatar and AnonAlias (multipart).
   async updateMe(payload: UpdateUserPayload): Promise<UserProfile> {
     const form = new FormData();
     if (payload.username != null) form.append("Username", payload.username);
     if (payload.bio != null) form.append("Bio", payload.bio);
     if (payload.avatarFile) form.append("Avatar", payload.avatarFile);
     if (payload.anonAlias != null) form.append("AnonAlias", payload.anonAlias);
-    if (payload.isAnonDefault != null) form.append("IsAnonDefault", String(payload.isAnonDefault));
     return apiClient.putForm<UserProfile>("/api/v1/users/me", form);
+  },
+
+  // PATCH /api/v1/users/me/anon flips IsAnonDefault on the server (a toggle —
+  // it takes no parameters). Call it only when the desired value differs from
+  // the current one.
+  async toggleAnonDefault(): Promise<void> {
+    await apiClient.patch("/api/v1/users/me/anon");
   },
 
   async updateUser(
@@ -65,31 +74,58 @@ export const userService = {
   },
 };
 
-// --- Author avatar cache -----------------------------------------------------
-// The posts/comments APIs don't return author avatars, so we fetch them from
-// GET /api/v1/users/{id} and cache the result to avoid duplicate requests when
-// the same author appears across many cards.
-const avatarCache = new Map<string, string | null>();
-const avatarInflight = new Map<string, Promise<string | null>>();
+// --- Author info cache -------------------------------------------------------
+// The posts/comments APIs don't return author avatars or premium status, so we
+// fetch the full profile from GET /api/v1/users/{id} once per author and reuse
+// it for both avatar and premium lookups across many feed cards.
+const userCache = new Map<string, UserProfile | null>();
+const userInflight = new Map<string, Promise<UserProfile | null>>();
 
-export async function getUserAvatar(id: string): Promise<string | null> {
+async function fetchUserCached(id: string): Promise<UserProfile | null> {
   if (!id) return null;
-  if (avatarCache.has(id)) return avatarCache.get(id) ?? null;
-  const existing = avatarInflight.get(id);
+  if (userCache.has(id)) return userCache.get(id) ?? null;
+  const existing = userInflight.get(id);
   if (existing) return existing;
   const promise = userService
     .getUserById(id)
     .then((u) => {
-      const avatar = u.avatarUrl ?? null;
-      avatarCache.set(id, avatar);
-      avatarInflight.delete(id);
-      return avatar;
+      userCache.set(id, u);
+      userInflight.delete(id);
+      return u;
     })
     .catch(() => {
-      avatarCache.set(id, null);
-      avatarInflight.delete(id);
+      userCache.set(id, null);
+      userInflight.delete(id);
       return null;
     });
-  avatarInflight.set(id, promise);
+  userInflight.set(id, promise);
+  return promise;
+}
+
+export async function getUserAvatar(id: string): Promise<string | null> {
+  const u = await fetchUserCached(id);
+  return u?.avatarUrl ?? null;
+}
+
+// Premium status is resolved best-effort from two sources: the user profile's
+// `isPremium` flag (if the backend includes it), falling back to the user's
+// subscription list. Cached so each author is checked at most once per session.
+const premiumCache = new Map<string, boolean>();
+const premiumInflight = new Map<string, Promise<boolean>>();
+
+export async function getUserPremium(id: string): Promise<boolean> {
+  if (!id) return false;
+  if (premiumCache.has(id)) return premiumCache.get(id) ?? false;
+  const existing = premiumInflight.get(id);
+  if (existing) return existing;
+  const promise = (async () => {
+    const u = await fetchUserCached(id);
+    let premium = u?.isPremium === true;
+    if (!premium) premium = await fetchPremiumStatusSafe(id);
+    premiumCache.set(id, premium);
+    premiumInflight.delete(id);
+    return premium;
+  })();
+  premiumInflight.set(id, promise);
   return promise;
 }

@@ -214,7 +214,7 @@ export function ProfileView() {
     setEditUsername(profile?.username ?? "");
     setEditBio(profile?.bio ?? "");
     setEditAnonAlias(profile?.anonAlias ?? "");
-    setEditIsAnonDefault(false);
+    setEditIsAnonDefault(profile?.isAnonDefault ?? false);
     setAvatarFile(null);
     setAvatarPreview(profile?.avatarUrl ?? "");
     setSelectedAnonImageId(profile?.anonImageId ?? null);
@@ -247,8 +247,11 @@ export function ProfileView() {
         bio: editBio || null,
         avatarFile: avatarFile ?? null,
         anonAlias: editAnonAlias || null,
-        isAnonDefault: editIsAnonDefault,
       });
+      // IsAnonDefault is a server-side toggle — only call it when the value changed.
+      if (editIsAnonDefault !== (profile?.isAnonDefault ?? false)) {
+        await userService.toggleAnonDefault();
+      }
       // Assign the picked anonymous avatar if it changed
       if (selectedAnonImageId && selectedAnonImageId !== (profile?.anonImageId ?? null)) {
         await anonImageService.setMyAnonImage(selectedAnonImageId);

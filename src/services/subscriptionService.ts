@@ -256,6 +256,28 @@ export const subscriptionService = {
     return apiClient.get<UserSubscription>(`/api/v1/user-subscriptions/${id}`);
   },
 
+  /**
+   * Public-facing peek at a user's subscription. Returns the currently active
+   * subscription (status 0, not expired) if any, otherwise the most recent one,
+   * or null when the user has none / the request is not permitted.
+   */
+  async getPublicSubscription(userId: string): Promise<UserSubscription | null> {
+    try {
+      const res = await this.getUserSubscriptions(userId, 1, 20);
+      const items = res.items ?? [];
+      if (items.length === 0) return null;
+      const now = Date.now();
+      const active = items.find((s) => s.status === 0 && new Date(s.expiresAt).getTime() > now);
+      if (active) return active;
+      // Fall back to the newest record so we can still show "expired" state.
+      return [...items].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )[0];
+    } catch {
+      return null;
+    }
+  },
+
   async deleteSubscription(id: string): Promise<void> {
     await apiClient.delete(`/api/v1/user-subscriptions/${id}`);
   },

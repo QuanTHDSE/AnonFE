@@ -17,6 +17,7 @@ import { PostDetailView } from "@/features/posts/pages/PostDetailPage";
 import { FollowingView } from "@/features/social/pages/FollowingPage";
 import { UserProfileView } from "@/features/social/pages/UserProfilePage";
 import { VerifyEmailView } from "@/features/auth/pages/VerifyEmailPage";
+import { ForgotPasswordView } from "@/features/auth/pages/ForgotPasswordPage";
 import { ProfileView } from "@/features/profile/pages/ProfilePage";
 import { AdminLayout } from "@/features/admin/components/AdminLayout";
 import { AdminDashboardView } from "@/features/admin/pages/AdminDashboardPage";
@@ -47,6 +48,10 @@ export const appRoutes: RouteObject[] = [
       {
         path: "verify-email",
         Component: VerifyEmailView,
+      },
+      {
+        path: "forgot-password",
+        Component: ForgotPasswordView,
       },
       {
         path: "posts/:id",

@@ -83,11 +83,6 @@ function PostCardItem({ post }: { post: FeedPostItem }) {
             <span className="text-xs font-bold px-2.5 py-1 bg-orange-50 text-[#F15B29] rounded-full border border-orange-100">
               {post.subject?.iconEmoji} {post.subject?.name ?? "—"}
             </span>
-            {post.isAnonymous && (
-              <span className="text-xs font-bold px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full">
-                Ẩn danh
-              </span>
-            )}
           </div>
           <span className="text-xs text-gray-400 font-medium">
             {formatRelativeTime(post.createdAt)}
@@ -164,7 +159,9 @@ export function UserProfileView() {
     ])
       .then(([prof, postsRes, stats]) => {
         setProfile(prof);
-        setPosts(postsRes.posts.filter((p) => p.authorId === profileId));
+        // Other people viewing this profile must NOT see the user's anonymous
+        // posts — only their public (non-anonymous) ones.
+        setPosts(postsRes.posts.filter((p) => p.authorId === profileId && !p.isAnonymous));
         setFollowStats(stats);
         // Use isPremium from user profile API if backend provides it, otherwise try subscription check
         if (prof.isPremium) {
@@ -351,7 +348,7 @@ export function UserProfileView() {
             <div className="mb-6">
               <h2 className="text-xl font-extrabold text-gray-900">Bài viết</h2>
               <p className="text-sm text-gray-400 font-medium mt-0.5">
-                Bao gồm cả bài đăng ẩn danh
+                Chỉ hiển thị bài đăng công khai
               </p>
             </div>
 

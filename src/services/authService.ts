@@ -147,6 +147,14 @@ export const authService = {
     await apiClient.post("/api/v1/auth/verify-email", { email, token });
   },
 
+  async forgotPassword(email: string): Promise<void> {
+    await apiClient.post("/api/v1/auth/forgot-password", { email });
+  },
+
+  async resetPassword(email: string, token: string, newPassword: string): Promise<void> {
+    await apiClient.post("/api/v1/auth/reset-password", { email, token, newPassword });
+  },
+
   getRefreshToken(): string | null {
     return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
   },
