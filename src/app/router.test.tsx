@@ -66,7 +66,7 @@ describe("app router", () => {
 
     renderRoute("/bookmarks");
 
-    expect(await screen.findByText("Saved")).toBeInTheDocument();
+    expect(await screen.findByText("Đã lưu")).toBeInTheDocument();
   });
 
   it.each([

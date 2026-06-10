@@ -90,7 +90,13 @@ async function request<T>(path: string, options?: RequestInit, skipRefresh = fal
   }
 
   if (res.status === 403) {
-    throw new Error("Không có quyền thực hiện thao tác này. Tài khoản cần được cấp quyền Admin.");
+    // Surface the backend's actual message when present (e.g. which permission
+    // is missing); fall back to a generic hint otherwise.
+    const detail = await extractErrorMessage(res);
+    const generic =
+      "Không có quyền thực hiện thao tác này. Token hiện tại chưa có quyền phù hợp — " +
+      "hãy đăng xuất và đăng nhập lại sau khi được cấp quyền.";
+    throw new Error(detail && !detail.startsWith("HTTP ") ? detail : generic);
   }
   if (!res.ok) {
     throw new Error(await extractErrorMessage(res));
