@@ -12,6 +12,8 @@ export type {
   PaginatedPostsResponse,
   PaginatedSubjectsResponse,
   Post,
+  PostMedia,
+  PostMediaType,
   PremiumPlan,
   SavedPost,
   Subject,

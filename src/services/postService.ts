@@ -6,6 +6,8 @@ import type {
   GetSubjectsParams,
   PaginatedPostsResponse,
   PaginatedSubjectsResponse,
+  PostMedia,
+  PostMediaType,
   SavedPost,
   Subject,
   UpdatePostPayload,
@@ -25,6 +27,18 @@ export interface TrendingTag {
   engagement: number;
 }
 
+interface RawMediaItem {
+  id: string;
+  fileUrl?: string | null;
+  url?: string | null;
+  contentType?: string | null;
+  originalFileName?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
+  displayOrder?: number | null;
+  mediaType?: string | null;
+}
+
 interface RawPostItem {
   id: string;
   title: string;
@@ -35,7 +49,10 @@ interface RawPostItem {
   isAnonymous: boolean;
   subjectId?: string | null;
   subjectName?: string | null;
+  // Legacy field — older responses returned image URLs directly.
   imageUrls?: string[] | null;
+  // Current field — unified media list (images + file attachments).
+  media?: RawMediaItem[] | null;
   tags?: string[] | null;
   // upvote / like — try multiple API field names
   upvotes?: number;
@@ -64,15 +81,42 @@ interface RawPaginatedPostsResponse {
   totalPages: number;
 }
 
+function mapMedia(raw: RawMediaItem): PostMedia | null {
+  const url = raw.fileUrl ?? raw.url ?? null;
+  if (!url) return null;
+  const type: PostMediaType = (raw.mediaType ?? "").toLowerCase() === "file" ? "File" : "Image";
+  return {
+    id: raw.id,
+    url,
+    contentType: raw.contentType ?? undefined,
+    fileName: raw.originalFileName ?? raw.fileName ?? undefined,
+    fileSize: raw.fileSize ?? undefined,
+    displayOrder: raw.displayOrder ?? undefined,
+    mediaType: type,
+  };
+}
+
 function mapPost(rawInput: RawPostItem, usernameMap: Record<string, string> = {}): FeedPostItem {
   const raw = rawInput as RawPostItem & Record<string, unknown>;
   const resolvedName = raw.authorUsername || usernameMap[raw.authorId];
+
+  const media = (raw.media ?? [])
+    .map(mapMedia)
+    .filter((m): m is PostMedia => m !== null)
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+  // Image URLs for display — prefer the new media list, fall back to legacy imageUrls.
+  const images =
+    media.length > 0
+      ? media.filter((m) => m.mediaType === "Image").map((m) => m.url)
+      : (raw.imageUrls ?? []);
+
   return {
     id: raw.id,
     title: raw.title,
     content: raw.content,
     isAnonymous: raw.isAnonymous,
-    images: raw.imageUrls ?? [],
+    images,
+    media,
     tags: raw.tags ?? [],
     subject:
       raw.subjectId && raw.subjectName
@@ -121,12 +165,31 @@ export const postService = {
       `/api/v1/posts${qs ? `?${qs}` : ""}`,
     );
     return {
-      posts: raw.posts.filter((p) => p.status !== "removed").map((post) => mapPost(post)),
+      posts: raw.posts
+        .filter((p) => (p.status ?? "").toLowerCase() !== "removed")
+        .map((post) => mapPost(post)),
       total: raw.total,
       page: raw.page,
       pageSize: raw.pageSize,
       totalPages: raw.totalPages,
     };
+  },
+
+  // Top / trending posts — GET /api/v1/posts/top?range=&sort=&page=&pageSize=
+  async getTopPosts(
+    params: { range?: string; sort?: string; page?: number; pageSize?: number } = {},
+  ): Promise<FeedPostItem[]> {
+    const query = new URLSearchParams();
+    query.set("range", params.range ?? "30d");
+    query.set("sort", params.sort ?? "hot");
+    query.set("page", String(params.page ?? 1));
+    query.set("pageSize", String(params.pageSize ?? 20));
+    const raw = await apiClient.get<RawPaginatedPostsResponse>(
+      `/api/v1/posts/top?${query.toString()}`,
+    );
+    return (raw.posts ?? [])
+      .filter((p) => (p.status ?? "").toLowerCase() !== "removed")
+      .map((post) => mapPost(post));
   },
 
   async getPostById(id: string): Promise<FeedPostItem> {
@@ -181,6 +244,7 @@ export const postService = {
     if (payload.isAnonymous !== undefined) form.append("IsAnonymous", String(payload.isAnonymous));
     payload.tags?.forEach((tag) => form.append("Tags", tag));
     payload.images?.forEach((file) => form.append("Images", file));
+    payload.files?.forEach((file) => form.append("File", file));
     await apiClient.postForm("/api/v1/posts", form);
   },
 
@@ -190,7 +254,9 @@ export const postService = {
     if (payload.content !== undefined) form.append("Content", payload.content);
     payload.tags?.forEach((tag) => form.append("Tags", tag));
     payload.newImages?.forEach((file) => form.append("NewImages", file));
-    payload.removeImageUrls?.forEach((url) => form.append("RemoveImageUrls", url));
+    payload.newFiles?.forEach((file) => form.append("NewFiles", file));
+    // Removal is now by media ID (RemoveFileId), not by URL.
+    payload.removeFileIds?.forEach((mediaId) => form.append("RemoveFileId", mediaId));
     await apiClient.putForm(`/api/v1/posts/${id}`, form);
   },
 
@@ -222,6 +288,6 @@ export const postService = {
     const resp = await apiClient.get<{ posts: { status?: string }[]; total: number }>(
       `/api/v1/subjects/${subjectId}/posts?pageSize=200`,
     );
-    return resp.posts.filter((p) => p.status !== "removed").length;
+    return resp.posts.filter((p) => (p.status ?? "").toLowerCase() !== "removed").length;
   },
 };

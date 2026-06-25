@@ -23,6 +23,7 @@ export function CreatePostView() {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -33,6 +34,7 @@ export function CreatePostView() {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [attachFiles, setAttachFiles] = useState<File[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
@@ -74,6 +76,17 @@ export function CreatePostView() {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleAttachChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setAttachFiles((prev) => [...prev, ...files]);
+    if (attachInputRef.current) attachInputRef.current.value = "";
+  };
+
+  const handleRemoveAttach = (index: number) => {
+    setAttachFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (
@@ -97,6 +110,7 @@ export function CreatePostView() {
         tags: tags.length > 0 ? tags : undefined,
         isAnonymous,
         images: imageFiles.length > 0 ? imageFiles : undefined,
+        files: attachFiles.length > 0 ? attachFiles : undefined,
       });
       setSubmitStatus("success");
       setTimeout(() => navigate("/"), 1500);
@@ -207,6 +221,47 @@ export function CreatePostView() {
                 multiple
                 className="hidden"
                 onChange={handleImageChange}
+              />
+            </div>
+
+            {/* File attachments */}
+            <div className="space-y-3">
+              {attachFiles.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {attachFiles.map((file, idx) => (
+                    <div
+                      key={`${file.name}-${idx}`}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100"
+                    >
+                      <FileText size={18} className="text-gray-400 shrink-0" />
+                      <span className="flex-1 text-sm font-semibold text-gray-700 truncate">
+                        {file.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAttach(idx)}
+                        className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shrink-0 hover:bg-red-600 transition-colors"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => attachInputRef.current?.click()}
+                className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#F15B29] transition-colors"
+              >
+                <Plus size={16} />
+                Thêm tệp đính kèm
+              </button>
+              <input
+                ref={attachInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleAttachChange}
               />
             </div>
 

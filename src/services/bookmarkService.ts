@@ -29,6 +29,21 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" && v.length > 0 ? v : undefined;
 }
 
+// Image URLs for the thumbnail. Prefer the new `media` list (filtering to
+// images), fall back to the legacy `imageUrls`/`images` arrays.
+function extractImages(source: Record<string, unknown>): string[] | null {
+  const media = source["media"];
+  if (Array.isArray(media)) {
+    const urls = media
+      .filter((m): m is Record<string, unknown> => typeof m === "object" && m !== null)
+      .filter((m) => String(m["mediaType"] ?? "").toLowerCase() !== "file")
+      .map((m) => str(m["fileUrl"]) ?? str(m["url"]))
+      .filter((u): u is string => !!u);
+    if (urls.length > 0) return urls;
+  }
+  return (source["imageUrls"] ?? source["images"] ?? null) as string[] | null;
+}
+
 function extractPost(raw: Record<string, unknown>): BookmarkPost {
   // Backend may return bookmark wrapper { id, postId, post: {...} }
   // or may return the post directly with bookmarkId etc.
@@ -83,7 +98,7 @@ function extractPost(raw: Record<string, unknown>): BookmarkPost {
     title: str(source["title"]),
     content: str(source["content"]),
     isAnonymous: (source["isAnonymous"] as boolean) ?? false,
-    images: (source["imageUrls"] ?? source["images"]) as string[] | null,
+    images: extractImages(source),
     tags: source["tags"] as string[] | null,
     likesCount: (source["likesCount"] ?? source["upvotes"] ?? source["upvoteCount"] ?? 0) as number,
     commentsCount: (source["commentsCount"] ?? source["commentCount"] ?? 0) as number,

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
-import type { FeedPostItem } from "@/types";
+import type { FeedPostItem, PostMedia } from "@/types";
 
 function fileToObjectUrl(file: File): string {
   return URL.createObjectURL(file);
@@ -38,13 +38,17 @@ export function EditPostView() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
-  // existing images: track which ones to remove
-  const [existingImages, setExistingImages] = useState<string[]>([]);
-  const [removeImageUrls, setRemoveImageUrls] = useState<string[]>([]);
+  // existing media (images + files): track which IDs to remove
+  const [existingMedia, setExistingMedia] = useState<PostMedia[]>([]);
+  const [removeFileIds, setRemoveFileIds] = useState<string[]>([]);
 
   // new images to upload
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+
+  // new file attachments to upload
+  const [newAttachFiles, setNewAttachFiles] = useState<File[]>([]);
+  const attachInputRef = useRef<HTMLInputElement>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
@@ -59,7 +63,7 @@ export function EditPostView() {
         setTitle(data.title);
         setContent(data.content);
         setTags(data.tags ?? []);
-        setExistingImages(data.images ?? []);
+        setExistingMedia(data.media ?? []);
       })
       .catch((err: unknown) =>
         setFetchError(err instanceof Error ? err.message : "Không tìm thấy bài viết."),
@@ -82,9 +86,9 @@ export function EditPostView() {
     }
   };
 
-  const handleMarkRemove = (url: string) => {
-    setRemoveImageUrls((prev) => [...prev, url]);
-    setExistingImages((prev) => prev.filter((u) => u !== url));
+  const handleMarkRemove = (mediaId: string) => {
+    setRemoveFileIds((prev) => [...prev, mediaId]);
+    setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId));
   };
 
   const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,6 +104,17 @@ export function EditPostView() {
     setNewImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleNewAttachChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setNewAttachFiles((prev) => [...prev, ...files]);
+    if (attachInputRef.current) attachInputRef.current.value = "";
+  };
+
+  const handleRemoveNewAttach = (index: number) => {
+    setNewAttachFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id || !title || !content) return;
@@ -112,7 +127,8 @@ export function EditPostView() {
         content,
         tags: tags.length > 0 ? tags : [],
         newImages: newImageFiles.length > 0 ? newImageFiles : undefined,
-        removeImageUrls: removeImageUrls.length > 0 ? removeImageUrls : undefined,
+        newFiles: newAttachFiles.length > 0 ? newAttachFiles : undefined,
+        removeFileIds: removeFileIds.length > 0 ? removeFileIds : undefined,
       });
       setSubmitStatus("success");
       setTimeout(() => navigate(`/posts/${id}`), 1500);
@@ -127,6 +143,8 @@ export function EditPostView() {
   if (!isLoggedIn) return null;
 
   const canSubmit = title.trim() && content.trim() && !isLoading;
+  const existingImages = existingMedia.filter((m) => m.mediaType === "Image");
+  const existingFiles = existingMedia.filter((m) => m.mediaType === "File");
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex text-gray-900 font-sans selection:bg-orange-100 selection:text-[#F15B29]">
@@ -212,16 +230,16 @@ export function EditPostView() {
                       Ảnh hiện tại
                     </label>
                     <div className="flex flex-wrap gap-3">
-                      {existingImages.map((url) => (
-                        <div key={url} className="relative group">
+                      {existingImages.map((media) => (
+                        <div key={media.id} className="relative group">
                           <img
-                            src={url}
-                            alt="existing"
+                            src={media.url}
+                            alt={media.fileName ?? "existing"}
                             className="w-28 h-28 object-cover rounded-2xl border border-gray-100 shadow-sm"
                           />
                           <button
                             type="button"
-                            onClick={() => handleMarkRemove(url)}
+                            onClick={() => handleMarkRemove(media.id)}
                             className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
                           >
                             <X size={12} />
@@ -250,6 +268,85 @@ export function EditPostView() {
                     </div>
                   </div>
                 )}
+
+                {/* Existing file attachments */}
+                {existingFiles.length > 0 && (
+                  <div className="space-y-3">
+                    <label className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2">
+                      <FileText size={16} className="text-[#F15B29]" />
+                      Tệp đính kèm
+                    </label>
+                    <div className="flex flex-col gap-2">
+                      {existingFiles.map((media) => (
+                        <div
+                          key={media.id}
+                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100"
+                        >
+                          <FileText size={18} className="text-gray-400 shrink-0" />
+                          <a
+                            href={media.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 text-sm font-semibold text-gray-700 hover:text-[#F15B29] truncate"
+                          >
+                            {media.fileName ?? "Tệp đính kèm"}
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkRemove(media.id)}
+                            className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shrink-0 hover:bg-red-600 transition-colors"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* New file attachments */}
+                <div className="space-y-2">
+                  {newAttachFiles.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      {newAttachFiles.map((file, idx) => (
+                        <div
+                          key={`${file.name}-${idx}`}
+                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border-2 border-[#F15B29]/30"
+                        >
+                          <FileText size={18} className="text-[#F15B29] shrink-0" />
+                          <span className="flex-1 text-sm font-semibold text-gray-700 truncate">
+                            {file.name}
+                          </span>
+                          <span className="text-[10px] font-bold bg-[#F15B29] text-white px-1.5 py-0.5 rounded-full">
+                            Mới
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveNewAttach(idx)}
+                            className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shrink-0 hover:bg-red-600 transition-colors"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => attachInputRef.current?.click()}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#F15B29] transition-colors"
+                  >
+                    <Plus size={16} />
+                    Thêm tệp đính kèm
+                  </button>
+                  <input
+                    ref={attachInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleNewAttachChange}
+                  />
+                </div>
 
                 {/* Add new images */}
                 <div className="space-y-2">

@@ -50,7 +50,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     userService
       .getMe()
-      .then(setUserProfile)
+      .then((profile) => {
+        setUserProfile(profile);
+        // Sync the cached display name with the authoritative API value. This
+        // repairs any stale/mojibaked name left over from older tokens without
+        // requiring the user to log in again.
+        if (profile.username) {
+          setUser((prev) => {
+            if (!prev || prev.name === profile.username) return prev;
+            const updated = { ...prev, name: profile.username };
+            authService.updateStoredUser(updated);
+            return updated;
+          });
+        }
+      })
       .catch(() => setUserProfile(null));
   }, [user?.id]);
 

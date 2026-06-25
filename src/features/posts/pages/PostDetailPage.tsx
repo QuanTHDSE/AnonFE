@@ -6,6 +6,8 @@ import {
   ArrowLeft,
   Bookmark,
   Calendar,
+  Download,
+  FileText,
   Heart,
   Loader2,
   MessageSquare,
@@ -178,6 +180,7 @@ export function PostDetailView() {
           post &&
           (() => {
             const images = post.images ?? [];
+            const files = (post.media ?? []).filter((m) => m.mediaType === "File");
             const tags = post.tags ?? [];
             return (
               <motion.article
@@ -300,6 +303,32 @@ export function PostDetailView() {
                         >
                           #{tag}
                         </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* File attachments */}
+                  {files.length > 0 && (
+                    <div className="flex flex-col gap-2 mb-8">
+                      {files.map((media) => (
+                        <a
+                          key={media.id}
+                          href={media.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-orange-50/50 rounded-2xl border border-gray-100 transition-colors group"
+                        >
+                          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                            <FileText size={18} className="text-[#F15B29]" />
+                          </div>
+                          <span className="flex-1 text-sm font-semibold text-gray-700 truncate">
+                            {media.fileName ?? "Tệp đính kèm"}
+                          </span>
+                          <Download
+                            size={18}
+                            className="text-gray-400 group-hover:text-[#F15B29] transition-colors shrink-0"
+                          />
+                        </a>
                       ))}
                     </div>
                   )}

@@ -114,7 +114,10 @@ export interface UpdatePostPayload {
   content?: string;
   tags?: string[];
   newImages?: File[];
-  removeImageUrls?: string[];
+  /** Non-image file attachments to add. */
+  newFiles?: File[];
+  /** IDs of existing media items (images or files) to remove. */
+  removeFileIds?: string[];
 }
 
 export interface CreatePostPayload {
@@ -124,13 +127,31 @@ export interface CreatePostPayload {
   tags?: string[];
   isAnonymous?: boolean;
   images?: File[];
+  /** Non-image file attachments. */
+  files?: File[];
+}
+
+export type PostMediaType = "Image" | "File";
+
+/** A media item attached to a post (image or file), as returned by the API. */
+export interface PostMedia {
+  id: string;
+  url: string;
+  contentType?: string;
+  fileName?: string;
+  fileSize?: number;
+  displayOrder?: number;
+  mediaType: PostMediaType;
 }
 
 export interface FeedPostItem {
   id: string;
   title: string;
   content: string;
+  /** Image URLs only (derived from media), for display. */
   images?: string[] | null;
+  /** Full media list (images + file attachments) with IDs, for editing. */
+  media?: PostMedia[];
   tags?: string[] | null;
   isAnonymous: boolean;
   subject?: Subject | null;
