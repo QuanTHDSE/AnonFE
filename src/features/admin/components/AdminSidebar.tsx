@@ -3,6 +3,7 @@ import {
   BookOpen,
   CreditCard,
   FileText,
+  Image as ImageIcon,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -26,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Môn học", icon: BookOpen, path: "/admin/subjects" },
   { label: "Người dùng", icon: Users, path: "/admin/users" },
   { label: "Subscription", icon: CreditCard, path: "/admin/subscriptions" },
+  { label: "Ảnh ẩn danh", icon: ImageIcon, path: "/admin/anon-images" },
   { label: "Phân quyền", icon: KeyRound, path: "/admin/roles" },
 ];
 
