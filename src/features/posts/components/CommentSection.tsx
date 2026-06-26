@@ -283,7 +283,7 @@ function CommentItem({
     }
   };
 
-  const authorName = comment.isAnonymous ? "Ẩn danh" : (comment.author?.name ?? "Người dùng");
+  const authorName = comment.author?.name ?? (comment.isAnonymous ? "Ẩn danh" : "Người dùng");
   const replies = comment.replies ?? [];
 
   return (

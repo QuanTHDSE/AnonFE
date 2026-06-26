@@ -32,7 +32,7 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" && v.length > 0 ? v : undefined;
 }
 
-function normalizeAuthor(raw: Record<string, unknown>): Comment["author"] {
+function normalizeAuthor(raw: Record<string, unknown>, isAnonymous: boolean): Comment["author"] {
   // Try nested author object first
   const nested = raw["author"] as Record<string, unknown> | undefined;
   const id =
@@ -41,32 +41,42 @@ function normalizeAuthor(raw: Record<string, unknown>): Comment["author"] {
     str(raw["authorId"]) ??
     str(raw["userId"]) ??
     "";
-  const name =
-    str(nested?.["name"]) ??
+  const anonAlias =
+    str(nested?.["anonAlias"]) ?? str(raw["authorAnonAlias"]) ?? str(raw["anonAlias"]);
+  const username =
     str(nested?.["username"]) ??
     str(nested?.["userName"]) ??
+    str(nested?.["name"]) ??
     str(raw["authorName"]) ??
     str(raw["userName"]) ??
-    str(raw["username"]) ??
-    undefined;
-  const avatar =
-    str(nested?.["avatar"]) ??
+    str(raw["username"]);
+  // Anonymous comments must show the anon alias, never the real username.
+  const name = isAnonymous ? (anonAlias ?? "Ẩn danh") : (username ?? "");
+  // Only keep an avatar that's already an absolute URL; otherwise let the
+  // avatar hook resolve it by id (the API may return a raw storage key).
+  const rawAvatar =
     str(nested?.["avatarUrl"]) ??
+    str(nested?.["avatar"]) ??
     str(raw["authorAvatar"]) ??
-    str(raw["avatarUrl"]) ??
-    undefined;
+    str(raw["avatarUrl"]);
+  const avatar = isAnonymous
+    ? null
+    : rawAvatar && /^https?:\/\//i.test(rawAvatar)
+      ? rawAvatar
+      : undefined;
   if (!id && !name) return null;
-  return { id, name: name ?? "", avatar };
+  return { id, name, avatar };
 }
 
 function normalizeComment(raw: Record<string, unknown>): Comment {
+  const isAnonymous = (raw["isAnonymous"] as boolean) ?? false;
   return {
     id: str(raw["id"]) ?? "",
     postId: str(raw["postId"]) ?? "",
     parentId: str(raw["parentId"]) ?? null,
     content: str(raw["content"]) ?? "",
-    isAnonymous: (raw["isAnonymous"] as boolean) ?? false,
-    author: normalizeAuthor(raw),
+    isAnonymous,
+    author: normalizeAuthor(raw, isAnonymous),
     likesCount: (raw["likesCount"] as number) ?? (raw["upvotesCount"] as number) ?? 0,
     createdAt: str(raw["createdAt"]) ?? new Date().toISOString(),
     updatedAt: str(raw["updatedAt"]) ?? null,

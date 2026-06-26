@@ -29,19 +29,42 @@ function str(v: unknown): string | undefined {
   return typeof v === "string" && v.length > 0 ? v : undefined;
 }
 
+// CDN base used to absolutize relative media keys (the bookmarks API returns
+// raw R2 file keys, not full URLs). Derived from the API host for production.
+function cdnBase(): string {
+  const api = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
+  if (api.includes("api.anonwork.site")) return "https://cdn.anonwork.site";
+  return "";
+}
+
+// Turn a relative R2 key into an absolute URL; leave already-absolute URLs as-is.
+function toAbsoluteUrl(value: string): string {
+  if (/^https?:\/\//i.test(value)) return value;
+  const base = cdnBase();
+  return base ? `${base.replace(/\/$/, "")}/${value.replace(/^\//, "")}` : value;
+}
+
 // Image URLs for the thumbnail. Prefer the new `media` list (filtering to
-// images), fall back to the legacy `imageUrls`/`images` arrays.
+// images), fall back to the legacy `imageUrls`/`images` arrays. Each value is
+// normalized to an absolute URL since the bookmarks API may return raw keys.
 function extractImages(source: Record<string, unknown>): string[] | null {
   const media = source["media"];
   if (Array.isArray(media)) {
     const urls = media
       .filter((m): m is Record<string, unknown> => typeof m === "object" && m !== null)
       .filter((m) => String(m["mediaType"] ?? "").toLowerCase() !== "file")
-      .map((m) => str(m["fileUrl"]) ?? str(m["url"]))
-      .filter((u): u is string => !!u);
+      .map((m) => str(m["fileUrl"]) ?? str(m["url"]) ?? str(m["fileKey"]))
+      .filter((u): u is string => !!u)
+      .map(toAbsoluteUrl);
     if (urls.length > 0) return urls;
   }
-  return (source["imageUrls"] ?? source["images"] ?? null) as string[] | null;
+  const legacy = (source["imageUrls"] ?? source["images"]) as unknown;
+  if (Array.isArray(legacy)) {
+    return legacy
+      .filter((u): u is string => typeof u === "string" && u.length > 0)
+      .map(toAbsoluteUrl);
+  }
+  return null;
 }
 
 function extractPost(raw: Record<string, unknown>): BookmarkPost {
