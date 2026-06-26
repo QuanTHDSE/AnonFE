@@ -48,7 +48,10 @@ const PostCard = ({
 }) => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const authorAvatar = useAuthorAvatar(post.isAnonymous ? null : post.authorId);
+  const fetchedAvatar = useAuthorAvatar(post.isAnonymous ? null : post.authorId);
+  // Prefer the avatar the API returns (anon-image for anonymous posts, real
+  // avatar otherwise); fall back to the per-author fetch for non-anon posts.
+  const authorAvatar = post.author?.avatar ?? fetchedAvatar;
   const authorInitials = post.author?.name?.slice(0, 2).toUpperCase() ?? "??";
 
   const [likesCount, setLikesCount] = useState(post.likesCount);

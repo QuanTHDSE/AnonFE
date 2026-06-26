@@ -4,6 +4,8 @@ export interface AnonImage {
   id: string;
   name: string;
   imageUrl: string;
+  /** R2 storage key — used to match against the key returned by GET /users/me. */
+  fileKey: string;
   isActive: boolean;
 }
 
@@ -16,7 +18,16 @@ function normalizeAnonImage(raw: Record<string, unknown>): AnonImage {
     id: str(raw["id"]) ?? str(raw["anonImageId"]) ?? "",
     name: str(raw["name"]) ?? str(raw["title"]) ?? "",
     imageUrl:
-      str(raw["imageUrl"]) ?? str(raw["url"]) ?? str(raw["image"]) ?? str(raw["imageURL"]) ?? "",
+      str(raw["fileUrl"]) ??
+      str(raw["imageUrl"]) ??
+      str(raw["secureUrl"]) ??
+      str(raw["url"]) ??
+      str(raw["image"]) ??
+      str(raw["imageURL"]) ??
+      str(raw["photoUrl"]) ??
+      str(raw["avatarUrl"]) ??
+      "",
+    fileKey: str(raw["fileKey"]) ?? "",
     isActive: (raw["isActive"] as boolean) ?? true,
   };
 }
@@ -27,10 +38,19 @@ function normalizeList(res: unknown): AnonImage[] {
     : (((res as Record<string, unknown>)?.["items"] ??
         (res as Record<string, unknown>)?.["data"] ??
         (res as Record<string, unknown>)?.["results"] ??
+        (res as Record<string, unknown>)?.["anonImages"] ??
         []) as unknown[]);
-  return (list as Record<string, unknown>[])
-    .map(normalizeAnonImage)
-    .filter((x) => x.id && x.imageUrl);
+  const rawItems = (Array.isArray(list) ? list : []) as Record<string, unknown>[];
+  const valid = rawItems.map(normalizeAnonImage).filter((x) => x.id && x.imageUrl);
+  // Diagnostic: the API returned items but none had a recognizable image URL —
+  // surface the actual field names so the mismatch is obvious instead of silent.
+  if (rawItems.length > 0 && valid.length === 0) {
+    const keys = Object.keys(rawItems[0] ?? {}).join(", ");
+    throw new Error(
+      `API trả ${rawItems.length} ảnh nhưng không đọc được URL. Field nhận được: [${keys}]`,
+    );
+  }
+  return valid;
 }
 
 export interface AnonImagePayload {
@@ -48,12 +68,16 @@ function buildForm(payload: AnonImagePayload): FormData {
 }
 
 export const anonImageService = {
-  /** Gallery of anonymous avatars. Pass activeOnly=false to include inactive ones (admin). */
+  /**
+   * Gallery of anonymous avatars. The backend returns active-only for users
+   * without the `anon-images.read:all` permission, and all (incl. inactive) for
+   * those who have it. Pass activeOnly=true to additionally filter client-side
+   * so the avatar picker never offers an inactive image (assignment rejects it).
+   */
   async getAnonImages(activeOnly = true): Promise<AnonImage[]> {
-    const res = await apiClient.get<unknown>(
-      `/api/v1/anon-images${activeOnly ? "?isActive=true" : ""}`,
-    );
-    return normalizeList(res);
+    const res = await apiClient.get<unknown>("/api/v1/anon-images");
+    const parsed = normalizeList(res);
+    return activeOnly ? parsed.filter((x) => x.isActive) : parsed;
   },
 
   async getAnonImageById(id: string): Promise<AnonImage> {

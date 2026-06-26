@@ -9,7 +9,6 @@ import { CheckoutView } from "@/features/billing/pages/CheckoutPage";
 import { PremiumView } from "@/features/billing/pages/PremiumPage";
 import { ChatView } from "@/features/chat/pages/ChatPage";
 import { HomeView } from "@/features/feed/pages/HomePage";
-import { HistoricalLeaderboardView } from "@/features/leaderboard/pages/HistoryLeaderboardPage";
 import { LeaderboardView } from "@/features/leaderboard/pages/LeaderboardPage";
 import { CreatePostView } from "@/features/posts/pages/CreatePostPage";
 import { EditPostView } from "@/features/posts/pages/EditPostPage";
@@ -65,10 +64,6 @@ export const appRoutes: RouteObject[] = [
       {
         path: "leaderboard",
         Component: LeaderboardView,
-      },
-      {
-        path: "history",
-        Component: HistoricalLeaderboardView,
       },
       {
         path: "premium",

@@ -65,12 +65,4 @@ export const leaderboardService = {
       return [];
     }
   },
-
-  async getHistoricalLeaderboard(_month: string): Promise<LeaderboardPost[]> {
-    return [];
-  },
-
-  async getAvailableMonths(): Promise<{ value: string; label: string }[]> {
-    return [];
-  },
 };

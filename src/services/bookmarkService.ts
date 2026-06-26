@@ -56,20 +56,27 @@ function extractPost(raw: Record<string, unknown>): BookmarkPost {
   let authorId: string;
   let authorAvatar: string | undefined;
 
+  // Anon-image URL for anonymous posts, real avatar otherwise (post-level field).
+  const postAvatarUrl = str(source["authorAvatarUrl"]);
+
   if (authorRaw) {
     authorId = str(authorRaw["id"]) ?? str(source["authorId"]) ?? "";
-    authorAvatar = str(authorRaw["avatar"]) ?? str(authorRaw["avatarUrl"]) ?? undefined;
+    authorAvatar =
+      postAvatarUrl ?? str(authorRaw["avatar"]) ?? str(authorRaw["avatarUrl"]) ?? undefined;
     authorName = isAnon
-      ? (str(source["authorAnonAlias"]) ?? str(authorRaw["name"]) ?? "Ẩn danh")
+      ? (str(source["authorAnonAlias"]) ??
+        str(source["authorUsername"]) ??
+        str(authorRaw["name"]) ??
+        "Ẩn danh")
       : (str(authorRaw["name"]) ??
         str(authorRaw["username"]) ??
         str(source["authorUsername"]) ??
         "Người dùng");
   } else {
     authorId = str(source["authorId"]) ?? "";
-    authorAvatar = undefined;
+    authorAvatar = postAvatarUrl ?? undefined;
     authorName = isAnon
-      ? (str(source["authorAnonAlias"]) ?? "Ẩn danh")
+      ? (str(source["authorAnonAlias"]) ?? str(source["authorUsername"]) ?? "Ẩn danh")
       : (str(source["authorUsername"]) ?? "Người dùng");
   }
   const author = { id: authorId, name: authorName, avatar: authorAvatar };

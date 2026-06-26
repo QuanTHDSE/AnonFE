@@ -31,13 +31,18 @@ export function AdminAnonImagesView() {
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
 
   const load = () => {
     setIsLoading(true);
+    setLoadError("");
     anonImageService
       .getAnonImages(false)
       .then(setImages)
-      .catch(() => {})
+      .catch((err: unknown) =>
+        setLoadError(err instanceof Error ? err.message : "Không tải được thư viện ảnh."),
+      )
       .finally(() => setIsLoading(false));
   };
 
@@ -116,9 +121,10 @@ export function AdminAnonImagesView() {
       else await anonImageService.deleteAnonImage(id);
       setConfirmDeleteId(null);
       if (editing?.id === id) resetForm();
+      setActionError("");
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Xóa ảnh thất bại.");
+      setActionError(err instanceof Error ? err.message : "Xóa ảnh thất bại.");
     } finally {
       setDeletingId(null);
     }
@@ -299,7 +305,19 @@ export function AdminAnonImagesView() {
             </span>
           </div>
 
-          {isLoading ? (
+          {actionError && (
+            <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-sm font-bold">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              {actionError}
+            </div>
+          )}
+
+          {loadError ? (
+            <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-sm font-bold">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              {loadError}
+            </div>
+          ) : isLoading ? (
             <div className="grid grid-cols-3 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="animate-pulse aspect-square rounded-2xl bg-gray-100" />

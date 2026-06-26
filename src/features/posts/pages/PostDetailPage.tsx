@@ -41,7 +41,9 @@ export function PostDetailView() {
   const navigate = useNavigate();
   const { user, isLoggedIn } = useAuth();
   const [post, setPost] = useState<FeedPostItem | null>(null);
-  const authorAvatar = useAuthorAvatar(post?.isAnonymous ? null : post?.authorId);
+  const fetchedAvatar = useAuthorAvatar(post?.isAnonymous ? null : post?.authorId);
+  // Prefer the API avatar (anon-image for anonymous posts, real avatar otherwise).
+  const authorAvatar = post?.author?.avatar ?? fetchedAvatar;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
@@ -228,7 +230,7 @@ export function PostDetailView() {
                   <div className="flex items-start justify-between mb-6 gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-                        {!post.isAnonymous && authorAvatar ? (
+                        {authorAvatar ? (
                           <img
                             src={authorAvatar}
                             alt={post.author?.name}

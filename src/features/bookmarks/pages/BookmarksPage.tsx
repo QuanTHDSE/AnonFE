@@ -26,7 +26,8 @@ function BookmarkCard({
 }) {
   const navigate = useNavigate();
   const [removing, setRemoving] = useState(false);
-  const authorAvatar = useAuthorAvatar(item.isAnonymous ? null : item.author?.id);
+  const fetchedAvatar = useAuthorAvatar(item.isAnonymous ? null : item.author?.id);
+  const authorAvatar = item.author?.avatar ?? fetchedAvatar;
   const authorInitials = item.author?.name?.slice(0, 2).toUpperCase() ?? "??";
   const [commentsCount, setCommentsCount] = useState(item.commentsCount ?? 0);
 

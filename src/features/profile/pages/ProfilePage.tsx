@@ -192,7 +192,9 @@ export function ProfileView() {
 
   const [anonImages, setAnonImages] = useState<AnonImage[]>([]);
   const [isLoadingAnonImages, setIsLoadingAnonImages] = useState(false);
+  const [anonImagesError, setAnonImagesError] = useState("");
   const [selectedAnonImageId, setSelectedAnonImageId] = useState<string | null>(null);
+  const [initialAnonImageId, setInitialAnonImageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -210,6 +212,19 @@ export function ProfileView() {
       .finally(() => setIsLoading(false));
   }, [user]);
 
+  // getMe returns the assigned anon image as a storage key (`anonImageUrl`), not
+  // an id — resolve the matching gallery item by its fileKey so the picker can
+  // preselect it.
+  const resolveSelectedAnon = (imgs: AnonImage[]) => {
+    const key = profile?.anonImageUrl;
+    if (!key) return;
+    const match = imgs.find((i) => i.fileKey && (i.fileKey === key || i.imageUrl === key));
+    if (match) {
+      setSelectedAnonImageId(match.id);
+      setInitialAnonImageId(match.id);
+    }
+  };
+
   const openEdit = () => {
     setEditUsername(profile?.username ?? "");
     setEditBio(profile?.bio ?? "");
@@ -217,17 +232,28 @@ export function ProfileView() {
     setEditIsAnonDefault(profile?.isAnonDefault ?? false);
     setAvatarFile(null);
     setAvatarPreview(profile?.avatarUrl ?? "");
-    setSelectedAnonImageId(profile?.anonImageId ?? null);
+    setSelectedAnonImageId(null);
+    setInitialAnonImageId(null);
     setEditError("");
     setIsEditOpen(true);
 
     if (anonImages.length === 0) {
       setIsLoadingAnonImages(true);
+      setAnonImagesError("");
       anonImageService
         .getAnonImages(true)
-        .then(setAnonImages)
-        .catch(() => {})
+        .then((imgs) => {
+          setAnonImages(imgs);
+          resolveSelectedAnon(imgs);
+        })
+        .catch((err: unknown) =>
+          setAnonImagesError(
+            err instanceof Error ? err.message : "Không tải được thư viện ảnh ẩn danh.",
+          ),
+        )
         .finally(() => setIsLoadingAnonImages(false));
+    } else {
+      resolveSelectedAnon(anonImages);
     }
   };
 
@@ -241,6 +267,9 @@ export function ProfileView() {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     setEditError("");
+    const errors: string[] = [];
+
+    // 1. Profile fields (username / bio / avatar / alias) + anon-default toggle.
     try {
       await userService.updateMe({
         username: editUsername || null,
@@ -252,19 +281,37 @@ export function ProfileView() {
       if (editIsAnonDefault !== (profile?.isAnonDefault ?? false)) {
         await userService.toggleAnonDefault();
       }
-      // Assign the picked anonymous avatar if it changed
-      if (selectedAnonImageId && selectedAnonImageId !== (profile?.anonImageId ?? null)) {
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : "Cập nhật hồ sơ thất bại.");
+    }
+
+    // 2. Anonymous avatar — run independently so a profile-update failure above
+    // doesn't prevent (or mask) setting the picked image.
+    if (selectedAnonImageId && selectedAnonImageId !== initialAnonImageId) {
+      try {
         await anonImageService.setMyAnonImage(selectedAnonImageId);
+      } catch (err) {
+        errors.push(
+          `Đặt ảnh ẩn danh thất bại: ${err instanceof Error ? err.message : "lỗi không xác định"}`,
+        );
       }
-      setIsEditOpen(false);
+    }
+
+    if (errors.length > 0) {
+      setEditError(errors.join(" • "));
+      setIsSaving(false);
+      return;
+    }
+
+    setIsEditOpen(false);
+    try {
       const updated = await userService.getMe();
       setProfile(updated);
       refreshProfile();
-    } catch (err) {
-      setEditError(err instanceof Error ? err.message : "Cập nhật thất bại.");
-    } finally {
-      setIsSaving(false);
+    } catch {
+      refreshProfile();
     }
+    setIsSaving(false);
   };
 
   const handleDelete = async () => {
@@ -621,6 +668,8 @@ export function ProfileView() {
                   <Loader2 size={15} className="animate-spin" />
                   Đang tải thư viện...
                 </div>
+              ) : anonImagesError ? (
+                <p className="text-xs text-red-500 font-medium py-2">{anonImagesError}</p>
               ) : anonImages.length === 0 ? (
                 <p className="text-xs text-gray-400 font-medium py-2">
                   Chưa có ảnh ẩn danh nào trong thư viện.

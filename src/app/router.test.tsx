@@ -72,7 +72,6 @@ describe("app router", () => {
   it.each([
     ["/", "Explore"],
     ["/leaderboard", "Top Posts"],
-    ["/history", "Hall of Fame"],
     ["/premium", "Gói cước Premium"],
     ["/register", "Tạo tài khoản"],
   ])("smoke-renders %s", async (path, text) => {

@@ -1,6 +1,5 @@
 import {
   Bookmark,
-  Compass,
   Crown,
   Home,
   type LucideIcon,
@@ -17,7 +16,6 @@ import Vector from "@/imports/Vector";
 
 export type AppSidebarItem =
   | "home"
-  | "history"
   | "leaderboard"
   | "following"
   | "premium"
@@ -64,11 +62,6 @@ export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
 
       <nav className="flex-1 flex flex-col gap-4 xl:gap-6">
         <SidebarItem icon={Home} active={activeItem === "home"} onClick={() => navigate("/")} />
-        <SidebarItem
-          icon={Compass}
-          active={activeItem === "history"}
-          onClick={() => navigate("/history")}
-        />
         <SidebarItem
           icon={TrendingUp}
           active={activeItem === "leaderboard"}

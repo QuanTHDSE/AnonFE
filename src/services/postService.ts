@@ -46,6 +46,8 @@ interface RawPostItem {
   authorId: string;
   authorUsername?: string | null;
   authorAnonAlias?: string | null;
+  // Anon-image URL for anonymous posts, real avatar URL otherwise.
+  authorAvatarUrl?: string | null;
   isAnonymous: boolean;
   subjectId?: string | null;
   subjectName?: string | null;
@@ -124,8 +126,18 @@ function mapPost(rawInput: RawPostItem, usernameMap: Record<string, string> = {}
         : null,
     authorId: raw.authorId,
     author: raw.isAnonymous
-      ? { id: "", name: raw.authorAnonAlias || "Ẩn danh" }
-      : { id: raw.authorId, name: resolvedName || "Người dùng" },
+      ? {
+          id: "",
+          // For anonymous posts the API returns the anon alias in `authorUsername`
+          // (older builds used `authorAnonAlias`); fall back through both.
+          name: raw.authorAnonAlias || raw.authorUsername || "Ẩn danh",
+          avatar: raw.authorAvatarUrl ?? undefined,
+        }
+      : {
+          id: raw.authorId,
+          name: resolvedName || "Người dùng",
+          avatar: raw.authorAvatarUrl ?? undefined,
+        },
     createdAt: raw.createdAt,
     likesCount: raw.upvotes ?? raw.likesCount ?? raw.upvoteCount ?? 0,
     hasUpvoted:
