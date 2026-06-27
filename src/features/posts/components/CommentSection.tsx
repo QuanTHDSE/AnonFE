@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { commentService, type Comment } from "@/services/commentService";
-import { useAuthorAvatar } from "@/shared/hooks/useAuthorAvatar";
+import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import { Link, useNavigate } from "react-router";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -42,11 +42,30 @@ function isEdited(comment: Comment): boolean {
   return updated - created > 2000; // > 2s apart = genuinely edited
 }
 
-function AuthorAvatar({ author, size = 8 }: { author?: Comment["author"]; size?: number }) {
-  const fetched = useAuthorAvatar(author?.avatar ? null : author?.id);
-  const avatar = author?.avatar ?? fetched;
+function AuthorAvatar({
+  author,
+  isAnonymous = false,
+  size = 8,
+}: {
+  author?: Comment["author"];
+  isAnonymous?: boolean;
+  size?: number;
+}) {
+  // Anon-aware: for the current user's own anonymous comment this resolves to
+  // their anon image (from getMe); other users' anon comments resolve to null
+  // and fall back to the generic anonymous icon below.
+  const avatar = usePostAvatar(author?.id, isAnonymous, author?.avatar);
   const cls = `w-${size} h-${size} rounded-full object-cover border border-gray-100`;
   if (avatar) return <img src={avatar} alt={author?.name} className={cls} />;
+  if (isAnonymous) {
+    return (
+      <div
+        className={`w-${size} h-${size} rounded-full bg-gray-100 flex items-center justify-center shrink-0`}
+      >
+        <Users size={size < 8 ? 13 : 15} className="text-gray-400" />
+      </div>
+    );
+  }
   const initials = author?.name?.slice(0, 2).toUpperCase() ?? "??";
   return (
     <div
@@ -293,13 +312,7 @@ function CommentItem({
       className={`${depth > 0 ? "ml-8 pl-4 border-l-2 border-gray-100" : ""}`}
     >
       <div className="flex gap-3">
-        {comment.isAnonymous ? (
-          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-            <Users size={15} className="text-gray-400" />
-          </div>
-        ) : (
-          <AuthorAvatar author={comment.author} size={8} />
-        )}
+        <AuthorAvatar author={comment.author} isAnonymous={comment.isAnonymous} size={8} />
 
         <div className="flex-1 min-w-0">
           {/* Author + time */}

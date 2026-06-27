@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
-import { useAuthorAvatar } from "@/shared/hooks/useAuthorAvatar";
+import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import { postService } from "@/services/postService";
 import { bookmarkService } from "@/services/bookmarkService";
 import { CommentSection } from "@/features/posts/components/CommentSection";
@@ -41,9 +41,11 @@ export function PostDetailView() {
   const navigate = useNavigate();
   const { user, isLoggedIn } = useAuth();
   const [post, setPost] = useState<FeedPostItem | null>(null);
-  const fetchedAvatar = useAuthorAvatar(post?.isAnonymous ? null : post?.authorId);
-  // Prefer the API avatar (anon-image for anonymous posts, real avatar otherwise).
-  const authorAvatar = post?.author?.avatar ?? fetchedAvatar;
+  const authorAvatar = usePostAvatar(
+    post?.authorId,
+    post?.isAnonymous ?? false,
+    post?.author?.avatar,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);

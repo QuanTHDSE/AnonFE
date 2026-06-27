@@ -84,8 +84,14 @@ function extractPost(raw: Record<string, unknown>): BookmarkPost {
 
   if (authorRaw) {
     authorId = str(authorRaw["id"]) ?? str(source["authorId"]) ?? "";
-    authorAvatar =
-      postAvatarUrl ?? str(authorRaw["avatar"]) ?? str(authorRaw["avatarUrl"]) ?? undefined;
+    {
+      // For anon posts only trust the post-level `authorAvatarUrl` (the anon
+      // image); never fall back to the nested real avatar or we'd leak it.
+      const a = isAnon
+        ? postAvatarUrl
+        : (postAvatarUrl ?? str(authorRaw["avatar"]) ?? str(authorRaw["avatarUrl"]));
+      authorAvatar = a ? toAbsoluteUrl(a) : undefined;
+    }
     authorName = isAnon
       ? (str(source["authorAnonAlias"]) ??
         str(source["authorUsername"]) ??
@@ -97,7 +103,7 @@ function extractPost(raw: Record<string, unknown>): BookmarkPost {
         "Người dùng");
   } else {
     authorId = str(source["authorId"]) ?? "";
-    authorAvatar = postAvatarUrl ?? undefined;
+    authorAvatar = postAvatarUrl ? toAbsoluteUrl(postAvatarUrl) : undefined;
     authorName = isAnon
       ? (str(source["authorAnonAlias"]) ?? str(source["authorUsername"]) ?? "Ẩn danh")
       : (str(source["authorUsername"]) ?? "Người dùng");

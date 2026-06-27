@@ -7,7 +7,7 @@ import { bookmarkService, type BookmarkPost } from "@/services/bookmarkService";
 import { commentService } from "@/services/commentService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
-import { useAuthorAvatar } from "@/shared/hooks/useAuthorAvatar";
+import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("vi-VN", {
@@ -26,8 +26,11 @@ function BookmarkCard({
 }) {
   const navigate = useNavigate();
   const [removing, setRemoving] = useState(false);
-  const fetchedAvatar = useAuthorAvatar(item.isAnonymous ? null : item.author?.id);
-  const authorAvatar = item.author?.avatar ?? fetchedAvatar;
+  const authorAvatar = usePostAvatar(
+    item.author?.id,
+    item.isAnonymous ?? false,
+    item.author?.avatar,
+  );
   const authorInitials = item.author?.name?.slice(0, 2).toUpperCase() ?? "??";
   const [commentsCount, setCommentsCount] = useState(item.commentsCount ?? 0);
 

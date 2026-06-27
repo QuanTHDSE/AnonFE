@@ -37,7 +37,9 @@ function toLeaderboardPost(post: FeedPostItem, index: number): LeaderboardPost {
       name: post.isAnonymous
         ? (post.author?.name ?? "Ẩn danh")
         : (post.author?.name ?? "Người dùng"),
-      avatar: "",
+      // `author.avatar` is the anon image for anon posts, real avatar otherwise
+      // (populated from the API's `authorAvatarUrl`).
+      avatar: post.author?.avatar ?? "",
     },
     likes: post.likesCount,
     comments: post.commentsCount,

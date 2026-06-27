@@ -30,6 +30,7 @@ import { postService } from "@/services/postService";
 import { commentService } from "@/services/commentService";
 import { userService, type UserProfile } from "@/services/userService";
 import { anonImageService, type AnonImage } from "@/services/anonImageService";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
@@ -212,13 +213,20 @@ export function ProfileView() {
       .finally(() => setIsLoading(false));
   }, [user]);
 
-  // getMe returns the assigned anon image as a storage key (`anonImageUrl`), not
-  // an id — resolve the matching gallery item by its fileKey so the picker can
-  // preselect it.
+  // getMe returns the assigned anon image via `anonImageUrl` (full URL after the
+  // BE fix, possibly a raw key on older builds). Resolve the matching gallery
+  // item — comparing both the raw value and the absolutized URL — so the picker
+  // preselects the current image regardless of which form the API returns.
   const resolveSelectedAnon = (imgs: AnonImage[]) => {
     const key = profile?.anonImageUrl;
     if (!key) return;
-    const match = imgs.find((i) => i.fileKey && (i.fileKey === key || i.imageUrl === key));
+    const target = toAbsoluteMediaUrl(key);
+    const match = imgs.find(
+      (i) =>
+        i.fileKey === key ||
+        i.imageUrl === key ||
+        (target != null && toAbsoluteMediaUrl(i.imageUrl) === target),
+    );
     if (match) {
       setSelectedAnonImageId(match.id);
       setInitialAnonImageId(match.id);
@@ -663,6 +671,21 @@ export function ProfileView() {
             {/* Anonymous avatar picker */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Ảnh đại diện ẩn danh</label>
+              {profile?.anonImageUrl && (
+                <div className="flex items-center gap-3 p-2.5 bg-orange-50/60 border border-orange-100 rounded-2xl">
+                  <img
+                    src={toAbsoluteMediaUrl(profile.anonImageUrl) ?? undefined}
+                    alt="Ảnh ẩn danh hiện tại"
+                    className="w-11 h-11 rounded-full object-cover border-2 border-orange-200 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#F15B29]">Đang dùng</p>
+                    <p className="text-xs text-gray-500 font-medium">
+                      Ảnh hiển thị khi bạn đăng bài/bình luận ẩn danh
+                    </p>
+                  </div>
+                </div>
+              )}
               {isLoadingAnonImages ? (
                 <div className="flex items-center gap-2 text-sm text-gray-400 font-medium py-3">
                   <Loader2 size={15} className="animate-spin" />
@@ -710,22 +733,6 @@ export function ProfileView() {
               <p className="text-xs text-gray-400 font-medium ml-1">
                 Ảnh này hiển thị khi bạn đăng bài hoặc bình luận ẩn danh
               </p>
-            </div>
-
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
-              <input
-                type="checkbox"
-                id="anonDefault"
-                checked={editIsAnonDefault}
-                onChange={(e) => setEditIsAnonDefault(e.target.checked)}
-                className="w-4 h-4 accent-[#F15B29]"
-              />
-              <label
-                htmlFor="anonDefault"
-                className="text-sm font-medium text-gray-700 cursor-pointer"
-              >
-                Mặc định đăng ẩn danh
-              </label>
             </div>
 
             {editError && (

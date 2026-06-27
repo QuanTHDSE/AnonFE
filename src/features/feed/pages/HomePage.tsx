@@ -21,7 +21,7 @@ import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback"
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
 import { SubscriptionPeekDialog } from "@/shared/components/SubscriptionPeekDialog";
-import { useAuthorAvatar } from "@/shared/hooks/useAuthorAvatar";
+import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import { getUserPremium } from "@/services/userService";
 import type { FeedPostItem } from "@/types";
 
@@ -48,10 +48,7 @@ const PostCard = ({
 }) => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
-  const fetchedAvatar = useAuthorAvatar(post.isAnonymous ? null : post.authorId);
-  // Prefer the avatar the API returns (anon-image for anonymous posts, real
-  // avatar otherwise); fall back to the per-author fetch for non-anon posts.
-  const authorAvatar = post.author?.avatar ?? fetchedAvatar;
+  const authorAvatar = usePostAvatar(post.authorId, post.isAnonymous, post.author?.avatar);
   const authorInitials = post.author?.name?.slice(0, 2).toUpperCase() ?? "??";
 
   const [likesCount, setLikesCount] = useState(post.likesCount);

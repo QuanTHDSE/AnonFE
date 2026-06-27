@@ -1,4 +1,10 @@
 import { apiClient } from "@/services/apiClient";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
+
+// The follows API returns the avatar as a raw R2 key — absolutize it to a URL.
+function normalizeFollowUser(u: FollowUserItem): FollowUserItem {
+  return { ...u, avatarUrl: toAbsoluteMediaUrl(u.avatarUrl) };
+}
 
 export interface FollowStats {
   followerCount: number;
@@ -63,7 +69,7 @@ export const followService = {
     const raw = await apiClient.get<RawFollowListResponse>(
       `/api/v1/follows/followers/${userId}?page=${page}&pageSize=${pageSize}`,
     );
-    return { ...raw, data: raw.data.map((item) => item.follower) };
+    return { ...raw, data: raw.data.map((item) => normalizeFollowUser(item.follower)) };
   },
 
   async getFollowing(
@@ -74,6 +80,6 @@ export const followService = {
     const raw = await apiClient.get<RawFollowListResponse>(
       `/api/v1/follows/following/${userId}?page=${page}&pageSize=${pageSize}`,
     );
-    return { ...raw, data: raw.data.map((item) => item.following) };
+    return { ...raw, data: raw.data.map((item) => normalizeFollowUser(item.following)) };
   },
 };

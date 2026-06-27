@@ -1,4 +1,5 @@
 import { apiClient } from "@/services/apiClient";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
 import type {
   CreatePostPayload,
   CreateSubjectPayload,
@@ -131,12 +132,14 @@ function mapPost(rawInput: RawPostItem, usernameMap: Record<string, string> = {}
           // For anonymous posts the API returns the anon alias in `authorUsername`
           // (older builds used `authorAnonAlias`); fall back through both.
           name: raw.authorAnonAlias || raw.authorUsername || "Ẩn danh",
-          avatar: raw.authorAvatarUrl ?? undefined,
+          // `authorAvatarUrl` holds the anon-image URL for anonymous posts and
+          // the real avatar URL otherwise. Absolutize in case it's a raw key.
+          avatar: toAbsoluteMediaUrl(raw.authorAvatarUrl) ?? undefined,
         }
       : {
           id: raw.authorId,
           name: resolvedName || "Người dùng",
-          avatar: raw.authorAvatarUrl ?? undefined,
+          avatar: toAbsoluteMediaUrl(raw.authorAvatarUrl) ?? undefined,
         },
     createdAt: raw.createdAt,
     likesCount: raw.upvotes ?? raw.likesCount ?? raw.upvoteCount ?? 0,
