@@ -7,6 +7,8 @@ export interface AnonImage {
   /** R2 storage key — used to match against the key returned by GET /users/me. */
   fileKey: string;
   isActive: boolean;
+  /** Premium-only image: only subscribers may assign it as their anon avatar. */
+  isExclusive: boolean;
 }
 
 function str(v: unknown): string | undefined {
@@ -29,6 +31,7 @@ function normalizeAnonImage(raw: Record<string, unknown>): AnonImage {
       "",
     fileKey: str(raw["fileKey"]) ?? "",
     isActive: (raw["isActive"] as boolean) ?? true,
+    isExclusive: (raw["isExclusive"] as boolean) ?? false,
   };
 }
 
@@ -57,6 +60,7 @@ export interface AnonImagePayload {
   name?: string | null;
   image?: File | null;
   isActive?: boolean | null;
+  isExclusive?: boolean | null;
 }
 
 function buildForm(payload: AnonImagePayload): FormData {
@@ -64,6 +68,7 @@ function buildForm(payload: AnonImagePayload): FormData {
   if (payload.name != null) form.append("Name", payload.name);
   if (payload.image) form.append("Image", payload.image);
   if (payload.isActive != null) form.append("IsActive", String(payload.isActive));
+  if (payload.isExclusive != null) form.append("IsExclusive", String(payload.isExclusive));
   return form;
 }
 

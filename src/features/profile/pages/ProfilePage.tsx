@@ -6,9 +6,11 @@ import {
   ArrowLeft,
   Calendar,
   Camera,
+  Crown,
   FileText,
   Heart,
   Loader2,
+  Lock,
   MessageSquare,
   Pencil,
   Settings,
@@ -701,24 +703,39 @@ export function ProfileView() {
                 <div className="grid grid-cols-5 gap-2.5 max-h-44 overflow-y-auto p-1">
                   {anonImages.map((img) => {
                     const selected = img.id === selectedAnonImageId;
+                    // Exclusive images are premium-only; lock them for free users.
+                    const locked = img.isExclusive && !isPremium;
                     return (
                       <button
                         key={img.id}
                         type="button"
-                        onClick={() => setSelectedAnonImageId(selected ? null : img.id)}
-                        title={img.name}
+                        disabled={locked}
+                        onClick={() =>
+                          locked ? undefined : setSelectedAnonImageId(selected ? null : img.id)
+                        }
+                        title={locked ? `${img.name} — cần Premium` : img.name}
                         className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${
                           selected
                             ? "border-[#F15B29] ring-2 ring-[#F15B29]/20"
                             : "border-transparent hover:border-orange-200"
-                        }`}
+                        } ${locked ? "cursor-not-allowed" : ""}`}
                       >
                         <img
                           src={img.imageUrl}
                           alt={img.name}
-                          className="w-full h-full object-cover"
+                          className={`w-full h-full object-cover ${locked ? "opacity-40" : ""}`}
                         />
-                        {selected && (
+                        {img.isExclusive && (
+                          <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center">
+                            <Crown size={9} />
+                          </span>
+                        )}
+                        {locked && (
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <Lock size={16} className="text-gray-700" />
+                          </span>
+                        )}
+                        {selected && !locked && (
                           <span className="absolute inset-0 bg-[#F15B29]/15 flex items-center justify-center">
                             <span className="w-5 h-5 rounded-full bg-[#F15B29] text-white flex items-center justify-center text-[11px] font-extrabold">
                               ✓
@@ -732,6 +749,13 @@ export function ProfileView() {
               )}
               <p className="text-xs text-gray-400 font-medium ml-1">
                 Ảnh này hiển thị khi bạn đăng bài hoặc bình luận ẩn danh
+                {!isPremium && (
+                  <>
+                    {" "}
+                    · Ảnh <Crown size={10} className="inline text-amber-500" /> chỉ dành cho
+                    Premium.
+                  </>
+                )}
               </p>
             </div>
 

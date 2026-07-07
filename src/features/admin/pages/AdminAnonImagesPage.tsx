@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   AlertCircle,
   CheckCircle,
+  Crown,
   ImagePlus,
   Loader2,
   Pencil,
@@ -22,6 +23,7 @@ export function AdminAnonImagesView() {
   const [editing, setEditing] = useState<AnonImage | null>(null);
   const [name, setName] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [isExclusive, setIsExclusive] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
 
@@ -54,6 +56,7 @@ export function AdminAnonImagesView() {
     setEditing(null);
     setName("");
     setIsActive(true);
+    setIsExclusive(false);
     setImageFile(null);
     setImagePreview("");
     setStatus("idle");
@@ -65,6 +68,7 @@ export function AdminAnonImagesView() {
     setEditing(img);
     setName(img.name);
     setIsActive(img.isActive);
+    setIsExclusive(img.isExclusive);
     setImageFile(null);
     setImagePreview(img.imageUrl);
     setStatus("idle");
@@ -91,7 +95,7 @@ export function AdminAnonImagesView() {
     setStatus("idle");
     setErrorMsg("");
     try {
-      const payload = { name: name.trim(), image: imageFile, isActive };
+      const payload = { name: name.trim(), image: imageFile, isActive, isExclusive };
       if (editing) {
         await anonImageService.updateAnonImage(editing.id, payload);
       } else {
@@ -268,6 +272,32 @@ export function AdminAnonImagesView() {
               </button>
             </div>
 
+            {/* IsExclusive */}
+            <div className="flex items-center justify-between p-4 bg-amber-50/80 rounded-2xl border border-amber-100">
+              <div>
+                <p className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                  <Crown size={15} className="text-amber-500" />
+                  Độc quyền (Premium)
+                </p>
+                <p className="text-xs font-medium text-gray-500">
+                  Chỉ người dùng có gói Premium mới chọn được ảnh này.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsExclusive((v) => !v)}
+                className={`relative w-12 h-6 rounded-full transition-colors duration-300 shrink-0 ${
+                  isExclusive ? "bg-amber-500" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${
+                    isExclusive ? "translate-x-6" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+
             <button
               type="submit"
               disabled={!canSubmit}
@@ -342,11 +372,19 @@ export function AdminAnonImagesView() {
                   <div className="aspect-square bg-gray-50">
                     <img src={img.imageUrl} alt={img.name} className="w-full h-full object-cover" />
                   </div>
-                  {!img.isActive && (
-                    <span className="absolute top-1.5 left-1.5 text-[10px] font-bold bg-gray-900/70 text-white px-1.5 py-0.5 rounded-full">
-                      Tắt
-                    </span>
-                  )}
+                  <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+                    {!img.isActive && (
+                      <span className="text-[10px] font-bold bg-gray-900/70 text-white px-1.5 py-0.5 rounded-full">
+                        Tắt
+                      </span>
+                    )}
+                    {img.isExclusive && (
+                      <span className="flex items-center gap-0.5 text-[10px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded-full">
+                        <Crown size={9} />
+                        Premium
+                      </span>
+                    )}
+                  </div>
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
                     <p className="text-[11px] font-bold text-white truncate">{img.name}</p>
                   </div>

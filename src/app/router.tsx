@@ -24,6 +24,7 @@ import { AdminPostsView } from "@/features/admin/pages/AdminPostsPage";
 import { AdminSubjectsView } from "@/features/admin/pages/AdminSubjectsPage";
 import { AdminUsersView } from "@/features/admin/pages/AdminUsersPage";
 import { AdminSubscriptionsView } from "@/features/admin/pages/AdminSubscriptionsPage";
+import { AdminSubscriptionPlansView } from "@/features/admin/pages/AdminSubscriptionPlansPage";
 import { AdminRolesView } from "@/features/admin/pages/AdminRolesPage";
 import { AdminAnonImagesView } from "@/features/admin/pages/AdminAnonImagesPage";
 import { UserSubscriptionView } from "@/features/billing/pages/UserSubscriptionPage";
@@ -132,6 +133,10 @@ export const appRoutes: RouteObject[] = [
               {
                 path: "subscriptions",
                 Component: AdminSubscriptionsView,
+              },
+              {
+                path: "subscription-plans",
+                Component: AdminSubscriptionPlansView,
               },
               {
                 path: "roles",

@@ -32,9 +32,41 @@ export interface SubscriptionPlan {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
   price: number;
   durationDays: number;
-  features: string;
+  // Legacy free-form features blob (older responses). New plans expose the
+  // structured limit fields below instead.
+  features?: string | null;
+  // Quota / capability limits (subscription-plan model on the API).
+  maxPostsPerDay?: number;
+  maxUploadsPerDay?: number;
+  maxPostFileSizeMb?: number;
+  maxPostImageCount?: number;
+  maxPostMediaCount?: number;
+  canAttachMediaToPost?: boolean;
+  canUploadPostFiles?: boolean;
+  canUseExclusiveAnonImages?: boolean;
+  canUsePremiumFeatures?: boolean;
+  isActive: boolean;
+}
+
+/** Payload for creating/updating a subscription plan (admin). */
+export interface SubscriptionPlanPayload {
+  name: string;
+  slug: string;
+  description?: string | null;
+  price: number;
+  durationDays: number;
+  maxPostsPerDay: number;
+  maxUploadsPerDay: number;
+  maxPostFileSizeMb: number;
+  maxPostImageCount: number;
+  maxPostMediaCount: number;
+  canAttachMediaToPost: boolean;
+  canUploadPostFiles: boolean;
+  canUseExclusiveAnonImages: boolean;
+  canUsePremiumFeatures: boolean;
   isActive: boolean;
 }
 
@@ -44,6 +76,13 @@ export interface PaginatedPlansResponse {
   page: number;
   pageSize: number;
   totalPages: number;
+}
+
+function extractPlanList(res: unknown): SubscriptionPlan[] {
+  if (Array.isArray(res)) return res as SubscriptionPlan[];
+  const obj = (res ?? {}) as Record<string, unknown>;
+  const list = obj.subscriptionPlans ?? obj.items ?? obj.plans ?? obj.data ?? obj.results ?? [];
+  return (Array.isArray(list) ? list : []) as SubscriptionPlan[];
 }
 
 export interface CreateOrderResponse {
@@ -228,10 +267,32 @@ export const subscriptionService = {
     const res = await apiClient.get<unknown>(
       "/api/v1/subscription-plans?isActive=true&pageSize=50",
     );
-    if (Array.isArray(res)) return res as SubscriptionPlan[];
-    const obj = res as Record<string, unknown>;
-    const list = obj.items ?? obj.subscriptionPlans ?? obj.plans ?? obj.data ?? obj.results ?? [];
-    return (Array.isArray(list) ? list : []) as SubscriptionPlan[];
+    return extractPlanList(res);
+  },
+
+  /** All plans incl. inactive — admin catalog management. */
+  async getAllPlans(): Promise<SubscriptionPlan[]> {
+    const res = await apiClient.get<unknown>("/api/v1/subscription-plans?pageSize=100");
+    return extractPlanList(res);
+  },
+
+  async getPlanById(id: string): Promise<SubscriptionPlan> {
+    return apiClient.get<SubscriptionPlan>(`/api/v1/subscription-plans/${id}`);
+  },
+
+  /** Create a plan (admin — POST /api/v1/subscription-plans). */
+  async createPlan(payload: SubscriptionPlanPayload): Promise<SubscriptionPlan> {
+    return apiClient.post<SubscriptionPlan>("/api/v1/subscription-plans", payload);
+  },
+
+  /** Update a plan (admin — PUT /api/v1/subscription-plans/{id}). */
+  async updatePlan(id: string, payload: SubscriptionPlanPayload): Promise<SubscriptionPlan> {
+    return apiClient.put<SubscriptionPlan>(`/api/v1/subscription-plans/${id}`, payload);
+  },
+
+  /** Delete a plan (admin — DELETE /api/v1/subscription-plans/{id}). */
+  async deletePlan(id: string): Promise<void> {
+    await apiClient.delete(`/api/v1/subscription-plans/${id}`);
   },
 
   async createOrder(planId: string): Promise<CreateOrderResponse> {

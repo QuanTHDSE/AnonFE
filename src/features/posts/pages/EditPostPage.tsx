@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import {
   AlertCircle,
   ArrowLeft,
   CheckCircle,
+  Crown,
   FileText,
   Image as ImageIcon,
   Loader2,
@@ -25,8 +26,11 @@ function fileToObjectUrl(file: File): string {
 export function EditPostView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isPremium } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Free-tier limit (server-enforced): at most 1 image per post, no files.
+  const maxImages = isPremium ? Infinity : 1;
 
   const [post, setPost] = useState<FeedPostItem | null>(null);
   const [isFetching, setIsFetching] = useState(true);
@@ -94,8 +98,22 @@ export function EditPostView() {
   const handleNewImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-    setNewImageFiles((prev) => [...prev, ...files]);
-    setNewImagePreviews((prev) => [...prev, ...files.map(fileToObjectUrl)]);
+    const currentImages =
+      existingMedia.filter((m) => m.mediaType === "Image").length + newImageFiles.length;
+    const room = Math.max(0, maxImages - currentImages);
+    const accepted = files.slice(0, room);
+    if (accepted.length < files.length && !isPremium) {
+      setErrorMessage(
+        "Người dùng miễn phí chỉ được 1 ảnh mỗi bài. Nâng cấp Premium để thêm nhiều ảnh.",
+      );
+      setSubmitStatus("error");
+    }
+    if (accepted.length === 0) {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    setNewImageFiles((prev) => [...prev, ...accepted]);
+    setNewImagePreviews((prev) => [...prev, ...accepted.map(fileToObjectUrl)]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -122,12 +140,19 @@ export function EditPostView() {
     setSubmitStatus("idle");
     setErrorMessage("");
     try {
+      // Mirror server-side free-tier limits: no file attachments; cap total
+      // images at 1 (accounting for images kept after removals).
+      const keptImages = existingMedia.filter((m) => m.mediaType === "Image").length;
+      const newImages = isPremium
+        ? newImageFiles
+        : newImageFiles.slice(0, Math.max(0, maxImages - keptImages));
+      const newFiles = isPremium ? newAttachFiles : [];
       await postService.updatePost(id, {
         title,
         content,
         tags: tags.length > 0 ? tags : [],
-        newImages: newImageFiles.length > 0 ? newImageFiles : undefined,
-        newFiles: newAttachFiles.length > 0 ? newAttachFiles : undefined,
+        newImages: newImages.length > 0 ? newImages : undefined,
+        newFiles: newFiles.length > 0 ? newFiles : undefined,
         removeFileIds: removeFileIds.length > 0 ? removeFileIds : undefined,
       });
       setSubmitStatus("success");
@@ -304,64 +329,95 @@ export function EditPostView() {
                   </div>
                 )}
 
-                {/* New file attachments */}
-                <div className="space-y-2">
-                  {newAttachFiles.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                      {newAttachFiles.map((file, idx) => (
-                        <div
-                          key={`${file.name}-${idx}`}
-                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border-2 border-[#F15B29]/30"
-                        >
-                          <FileText size={18} className="text-[#F15B29] shrink-0" />
-                          <span className="flex-1 text-sm font-semibold text-gray-700 truncate">
-                            {file.name}
-                          </span>
-                          <span className="text-[10px] font-bold bg-[#F15B29] text-white px-1.5 py-0.5 rounded-full">
-                            Mới
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveNewAttach(idx)}
-                            className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shrink-0 hover:bg-red-600 transition-colors"
+                {/* New file attachments — premium only */}
+                {isPremium ? (
+                  <div className="space-y-2">
+                    {newAttachFiles.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        {newAttachFiles.map((file, idx) => (
+                          <div
+                            key={`${file.name}-${idx}`}
+                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border-2 border-[#F15B29]/30"
                           >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => attachInputRef.current?.click()}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#F15B29] transition-colors"
+                            <FileText size={18} className="text-[#F15B29] shrink-0" />
+                            <span className="flex-1 text-sm font-semibold text-gray-700 truncate">
+                              {file.name}
+                            </span>
+                            <span className="text-[10px] font-bold bg-[#F15B29] text-white px-1.5 py-0.5 rounded-full">
+                              Mới
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveNewAttach(idx)}
+                              className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shrink-0 hover:bg-red-600 transition-colors"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => attachInputRef.current?.click()}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-[#F15B29] transition-colors"
+                    >
+                      <Plus size={16} />
+                      Thêm tệp đính kèm
+                    </button>
+                    <input
+                      ref={attachInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={handleNewAttachChange}
+                    />
+                  </div>
+                ) : (
+                  <Link
+                    to="/premium"
+                    className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-100 rounded-2xl hover:bg-amber-100 transition-colors"
                   >
-                    <Plus size={16} />
-                    Thêm tệp đính kèm
-                  </button>
-                  <input
-                    ref={attachInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleNewAttachChange}
-                  />
-                </div>
+                    <FileText size={18} className="text-amber-500 shrink-0" />
+                    <span className="flex-1 text-sm font-bold text-amber-700">
+                      Đính kèm tệp chỉ dành cho Premium
+                    </span>
+                    <span className="flex items-center gap-1 text-xs font-extrabold text-amber-600">
+                      <Crown size={13} />
+                      Nâng cấp
+                    </span>
+                  </Link>
+                )}
 
                 {/* Add new images */}
                 <div className="space-y-2">
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-32 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 hover:bg-orange-50/30 hover:border-[#F15B29]/40 transition-colors cursor-pointer group"
-                  >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mb-2 group-hover:scale-110 transition-transform">
-                      <ImageIcon
-                        size={20}
-                        className="text-gray-400 group-hover:text-[#F15B29] transition-colors"
-                      />
+                  {existingImages.length + newImageFiles.length < maxImages ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-32 border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center bg-gray-50 hover:bg-orange-50/30 hover:border-[#F15B29]/40 transition-colors cursor-pointer group"
+                    >
+                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                        <ImageIcon
+                          size={20}
+                          className="text-gray-400 group-hover:text-[#F15B29] transition-colors"
+                        />
+                      </div>
+                      <p className="font-bold text-gray-500 text-sm">Thêm ảnh mới</p>
+                      {!isPremium && (
+                        <p className="text-xs text-gray-400 mt-1">Tối đa 1 ảnh (Free)</p>
+                      )}
                     </div>
-                    <p className="font-bold text-gray-500 text-sm">Thêm ảnh mới</p>
-                  </div>
+                  ) : (
+                    !isPremium && (
+                      <Link
+                        to="/premium"
+                        className="flex items-center justify-center gap-2 w-full py-3 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-100 rounded-2xl hover:bg-amber-100 transition-colors"
+                      >
+                        <Crown size={14} />
+                        Đã đạt giới hạn 1 ảnh. Nâng cấp Premium để thêm nhiều ảnh.
+                      </Link>
+                    )
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"
