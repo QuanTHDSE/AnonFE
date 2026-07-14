@@ -28,6 +28,7 @@ import { AdminSubscriptionPlansView } from "@/features/admin/pages/AdminSubscrip
 import { AdminRolesView } from "@/features/admin/pages/AdminRolesPage";
 import { AdminAnonImagesView } from "@/features/admin/pages/AdminAnonImagesPage";
 import { UserSubscriptionView } from "@/features/billing/pages/UserSubscriptionPage";
+import { PolicyPage } from "@/features/policy/pages/PolicyPage";
 
 export const appRoutes: RouteObject[] = [
   {
@@ -69,6 +70,10 @@ export const appRoutes: RouteObject[] = [
       {
         path: "premium",
         Component: PremiumView,
+      },
+      {
+        path: "policy",
+        Component: PolicyPage,
       },
       {
         Component: ProtectedRoute,

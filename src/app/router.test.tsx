@@ -74,6 +74,7 @@ describe("app router", () => {
     ["/leaderboard", "Top Posts"],
     ["/premium", "Gói cước Premium"],
     ["/register", "Tạo tài khoản"],
+    ["/policy", "Chính sách sử dụng và bảo mật"],
   ])("smoke-renders %s", async (path, text) => {
     renderRoute(path);
 

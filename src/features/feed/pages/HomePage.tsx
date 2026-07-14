@@ -596,12 +596,12 @@ export function HomeView() {
 
           {/* Footer Links */}
           <div className="mt-8 px-4 flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-gray-400 font-medium">
-            <a href="#" className="hover:text-[#F15B29]">
-              Privacy
-            </a>
-            <a href="#" className="hover:text-[#F15B29]">
-              Terms
-            </a>
+            <Link to="/policy" className="hover:text-[#F15B29]">
+              Chính sách
+            </Link>
+            <Link to="/policy" className="hover:text-[#F15B29]">
+              Điều khoản
+            </Link>
             <a href="#" className="hover:text-[#F15B29]">
               Cookies
             </a>
