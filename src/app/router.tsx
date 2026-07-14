@@ -29,6 +29,7 @@ import { AdminRolesView } from "@/features/admin/pages/AdminRolesPage";
 import { AdminAnonImagesView } from "@/features/admin/pages/AdminAnonImagesPage";
 import { UserSubscriptionView } from "@/features/billing/pages/UserSubscriptionPage";
 import { PolicyPage } from "@/features/policy/pages/PolicyPage";
+import { PrivacyPage } from "@/features/privacy/pages/PrivacyPage";
 
 export const appRoutes: RouteObject[] = [
   {
@@ -74,6 +75,10 @@ export const appRoutes: RouteObject[] = [
       {
         path: "policy",
         Component: PolicyPage,
+      },
+      {
+        path: "privacy",
+        Component: PrivacyPage,
       },
       {
         Component: ProtectedRoute,
