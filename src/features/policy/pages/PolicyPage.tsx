@@ -32,7 +32,10 @@ export function PolicyPage() {
   return (
     <div className="min-h-screen bg-[#faf7f2] px-4 py-10 text-gray-900 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl rounded-[32px] border border-orange-100 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
-        <Link to="/" className="text-sm font-semibold text-[#F15B29] transition hover:text-[#d94b1f]">
+        <Link
+          to="/"
+          className="text-sm font-semibold text-[#F15B29] transition hover:text-[#d94b1f]"
+        >
           ← Quay về trang chủ
         </Link>
 
@@ -40,7 +43,8 @@ export function PolicyPage() {
           Chính sách sử dụng và bảo mật
         </h1>
         <p className="mt-3 text-sm text-gray-600">
-          Cập nhật lần cuối: 14/07/2026. Chúng tôi cam kết bảo vệ dữ liệu cá nhân và tạo ra môi trường sử dụng an toàn, minh bạch.
+          Cập nhật lần cuối: 14/07/2026. Chúng tôi cam kết bảo vệ dữ liệu cá nhân và tạo ra môi
+          trường sử dụng an toàn, minh bạch.
         </p>
 
         <div className="mt-8 space-y-6 text-sm leading-7 text-gray-700">
@@ -53,7 +57,8 @@ export function PolicyPage() {
         </div>
 
         <div className="mt-8 rounded-2xl bg-orange-50 p-4 text-sm text-orange-800">
-          Nếu bạn cần hỗ trợ hoặc có góp ý, hãy liên hệ với chúng tôi qua email hỗ trợ trong phần hồ sơ tài khoản.
+          Nếu bạn cần hỗ trợ hoặc có góp ý, hãy liên hệ với chúng tôi qua email hỗ trợ trong phần hồ
+          sơ tài khoản.
         </div>
       </div>
     </div>

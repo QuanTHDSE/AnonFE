@@ -395,6 +395,50 @@ export const subscriptionService = {
     return false;
   },
 
+  /**
+   * Display labels for a plan's benefits. Prefers the legacy free-form
+   * `features` blob when present; otherwise derives labels from the
+   * structured quota/capability fields (-1 or 0 = unlimited).
+   */
+  planFeatureLabels(plan: SubscriptionPlan): string[] {
+    const legacy = this.parseFeatures(plan.features as unknown);
+    if (legacy.length > 0) return legacy;
+
+    const labels: string[] = [];
+    const quota = (
+      value: number | undefined,
+      unlimited: string,
+      limited: (n: number) => string,
+    ) => {
+      if (typeof value !== "number") return;
+      labels.push(value <= 0 ? unlimited : limited(value));
+    };
+
+    quota(plan.maxPostsPerDay, "Đăng bài không giới hạn", (n) => `${n} bài đăng mỗi ngày`);
+    quota(plan.maxUploadsPerDay, "Tải lên không giới hạn", (n) => `${n} lượt tải lên mỗi ngày`);
+    quota(
+      plan.maxPostImageCount,
+      "Không giới hạn ảnh mỗi bài viết",
+      (n) => `Tối đa ${n} ảnh mỗi bài viết`,
+    );
+    quota(
+      plan.maxPostMediaCount,
+      "Không giới hạn media mỗi bài viết",
+      (n) => `Tối đa ${n} media mỗi bài viết`,
+    );
+    if (plan.canAttachMediaToPost) labels.push("Đính kèm ảnh/video vào bài viết");
+    if (plan.canUploadPostFiles) {
+      labels.push(
+        typeof plan.maxPostFileSizeMb === "number" && plan.maxPostFileSizeMb > 0
+          ? `Đính kèm tệp tối đa ${plan.maxPostFileSizeMb} MB`
+          : "Đính kèm tệp vào bài viết",
+      );
+    }
+    if (plan.canUseExclusiveAnonImages) labels.push("Avatar ẩn danh độc quyền");
+    if (plan.canUsePremiumFeatures) labels.push("Huy hiệu Premium và các đặc quyền Premium");
+    return labels;
+  },
+
   parseFeatures(raw: unknown): string[] {
     if (raw == null || raw === "") return [];
 

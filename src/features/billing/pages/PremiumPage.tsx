@@ -165,7 +165,7 @@ export function PremiumView() {
                 {plans.map((plan, idx) => {
                   const color = PLAN_COLORS[idx % PLAN_COLORS.length];
                   const Icon = PLAN_ICONS[idx % PLAN_ICONS.length];
-                  const features = subscriptionService.parseFeatures(plan.features as unknown);
+                  const features = subscriptionService.planFeatureLabels(plan);
                   const isPopular = idx === 1 && plans.length >= 2;
 
                   return (
@@ -191,10 +191,17 @@ export function PremiumView() {
                       </div>
 
                       {/* Duration */}
-                      <div className="flex items-center gap-1.5 text-gray-400 text-sm font-medium mb-6">
+                      <div className="flex items-center gap-1.5 text-gray-400 text-sm font-medium mb-2">
                         <Clock size={14} />
                         <span>Hiệu lực {formatDuration(plan.durationDays)}</span>
                       </div>
+
+                      {/* Description */}
+                      {plan.description ? (
+                        <p className="text-sm text-gray-500 mb-6">{plan.description}</p>
+                      ) : (
+                        <div className="mb-4" />
+                      )}
 
                       {/* Price */}
                       <div className="mb-8">
