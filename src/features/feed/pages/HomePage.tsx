@@ -2,11 +2,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bell,
   Bookmark,
+  Facebook,
+  Flame,
   Heart,
   Loader2,
   MessageSquare,
   Search,
   Share2,
+  Sparkles,
   Star,
   TrendingUp,
   Trophy,
@@ -26,7 +29,7 @@ import { SubscriptionPeekDialog } from "@/shared/components/SubscriptionPeekDial
 import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import { getUserPremium, userService, type TopContributor } from "@/services/userService";
 import { PostRating } from "@/features/posts/components/PostRating";
-import type { FeedPostItem } from "@/types";
+import type { FeedPostItem, Subject } from "@/types";
 
 function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -278,6 +281,7 @@ export function HomeView() {
 
   const [posts, setPosts] = useState<FeedPostItem[]>([]);
   const [trends, setTrends] = useState<TrendingTag[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [topContributors, setTopContributors] = useState<TopContributor[]>([]);
   const [isLoadingContributors, setIsLoadingContributors] = useState(true);
   const [bookmarkedPostIds, setBookmarkedPostIds] = useState<Set<string>>(new Set());
@@ -354,6 +358,11 @@ export function HomeView() {
     void postService
       .getTrendingTags()
       .then(setTrends)
+      .catch(() => {});
+
+    void postService
+      .getSubjects({ pageSize: 15 })
+      .then((res) => setSubjects(res.subjects ?? []))
       .catch(() => {});
   }, []);
 
@@ -673,15 +682,40 @@ export function HomeView() {
           </div>
 
           <div className="bg-white rounded-[32px] border border-gray-100 p-6 xl:p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl font-bold text-gray-900">Trending Now</h2>
-              <TrendingUp size={20} className="text-[#F15B29]" />
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
+                  <Flame size={20} className="text-[#F15B29]" />
+                  Trending Now
+                </h2>
+                <p className="text-xs text-gray-400 font-medium mt-0.5">Chủ đề & thẻ thảo luận HOT</p>
+              </div>
             </div>
 
             {trends.length === 0 ? (
-              <p className="text-sm text-gray-400 font-medium py-2">
-                Chưa có xu hướng nào. Hãy thêm thẻ vào bài viết của bạn!
-              </p>
+              <div className="space-y-4">
+                <div className="p-3 bg-orange-50/60 rounded-2xl border border-orange-100 flex items-center gap-2.5 text-xs text-orange-900 font-medium">
+                  <Sparkles size={16} className="text-[#F15B29] shrink-0" />
+                  <span>Chuyên ngành & Chủ đề nổi bật:</span>
+                </div>
+                {subjects.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {subjects.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => handleSearchChange(s.name)}
+                        className="px-3 py-2 bg-gray-50 hover:bg-orange-50 text-gray-700 hover:text-[#F15B29] border border-gray-200 hover:border-orange-200 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+                      >
+                        #{s.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 font-medium py-2">
+                    Chưa có xu hướng nào. Hãy thêm thẻ vào bài viết của bạn!
+                  </p>
+                )}
+              </div>
             ) : (
               <div className="space-y-5">
                 {trends.map((trend, index) => (
@@ -714,9 +748,39 @@ export function HomeView() {
               <p className="text-orange-100 text-sm mb-6">
                 Create an account to save posts and connect with creators.
               </p>
-              <button className="w-full py-3 bg-white text-[#F15B29] font-bold rounded-xl hover:bg-gray-50 transition-colors shadow-lg">
-                Get Started
+              <button
+                onClick={() => (isLoggedIn ? navigate("/create") : navigate("/signin"))}
+                className="w-full py-3 bg-white text-[#F15B29] font-bold rounded-xl hover:bg-gray-50 transition-colors shadow-lg cursor-pointer"
+              >
+                {isLoggedIn ? "Tạo bài viết mới" : "Get Started"}
               </button>
+
+              {/* Social Links */}
+              <div className="mt-5 pt-4 border-t border-white/20 flex items-center justify-between">
+                <span className="text-xs text-orange-100 font-semibold">Theo dõi AnonWorks:</span>
+                <div className="flex items-center gap-2">
+                  <a
+                    href="https://www.facebook.com/profile.php?id=61589880516548"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors shadow-xs"
+                    title="Facebook AnonWorks"
+                  >
+                    <Facebook size={16} />
+                  </a>
+                  <a
+                    href="https://www.tiktok.com/@anon.work7"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors shadow-xs"
+                    title="TikTok AnonWorks"
+                  >
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 3 15.68 6.34 6.34 0 0 0 9.34 22a6.33 6.33 0 0 0 6.33-6.33V9.05a8.16 8.16 0 0 0 4.67 1.48V7.08a4.85 4.85 0 0 1-.75-.39z" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
             </div>
             <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
             <div className="absolute -left-8 -top-8 w-24 h-24 bg-black/5 rounded-full blur-xl" />
