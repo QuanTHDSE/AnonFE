@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bell,
   Bookmark,
@@ -23,6 +23,7 @@ import { PremiumBadge } from "@/shared/components/PremiumBadge";
 import { SubscriptionPeekDialog } from "@/shared/components/SubscriptionPeekDialog";
 import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import { getUserPremium } from "@/services/userService";
+import { PostRating } from "@/features/posts/components/PostRating";
 import type { FeedPostItem } from "@/types";
 
 function formatRelativeTime(dateStr: string): string {
@@ -119,7 +120,7 @@ const PostCard = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow mb-8 max-w-[700px] w-full"
+      className="bg-white rounded-[32px] border border-gray-100 shadow-sm hover:shadow-md transition-shadow mb-8 max-w-[700px] w-full relative"
     >
       {!post.isAnonymous && post.author && (
         <SubscriptionPeekDialog
@@ -252,7 +253,13 @@ const PostCard = ({
             <MessageSquare size={20} />
             <span className="text-sm font-semibold">{commentsCount}</span>
           </button>
-          <button className="text-gray-500 hover:text-green-500 transition-colors">
+          <PostRating
+            postId={post.id}
+            initialAverageRating={post.averageRating}
+            initialRatingsCount={post.ratingsCount}
+            initialMyStars={post.myStars}
+          />
+          <button className="text-gray-500 hover:text-green-500 transition-colors ml-auto">
             <Share2 size={20} />
           </button>
         </div>

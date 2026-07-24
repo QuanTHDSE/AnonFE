@@ -20,6 +20,7 @@ import { fetchPremiumStatusSafe } from "@/services/subscriptionService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
+import { PostRating } from "@/features/posts/components/PostRating";
 import type { FeedPostItem } from "@/types";
 
 function formatDate(dateStr: string): string {
@@ -59,7 +60,7 @@ function PostCardItem({ post }: { post: FeedPostItem }) {
       key={post.id}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative"
     >
       {images.length > 0 && (
         <Link to={`/posts/${post.id}`} className="block">
@@ -114,6 +115,13 @@ function PostCardItem({ post }: { post: FeedPostItem }) {
             <MessageSquare size={15} />
             <span className="font-semibold">{commentsCount}</span>
           </span>
+          <PostRating
+            postId={post.id}
+            initialAverageRating={post.averageRating}
+            initialRatingsCount={post.ratingsCount}
+            initialMyStars={post.myStars}
+            size="sm"
+          />
         </div>
       </div>
     </motion.div>

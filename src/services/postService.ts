@@ -72,6 +72,16 @@ interface RawPostItem {
   commentCount?: number;
   totalComments?: number;
   numberOfComments?: number;
+  // rating fields from API
+  averageRating?: number;
+  avgRating?: number;
+  rating?: number;
+  ratingsCount?: number;
+  ratingCount?: number;
+  totalRatings?: number;
+  myStars?: number | null;
+  userRating?: number | null;
+  myRating?: number | null;
   status?: string;
   createdAt: string;
 }
@@ -151,6 +161,30 @@ function mapPost(rawInput: RawPostItem, usernameMap: Record<string, string> = {}
       raw.isUpvotedByCurrentUser,
     commentsCount:
       raw.commentsCount ?? raw.commentCount ?? raw.totalComments ?? raw.numberOfComments ?? 0,
+    averageRating:
+      typeof raw.averageRating === "number"
+        ? raw.averageRating
+        : typeof raw.avgRating === "number"
+          ? raw.avgRating
+          : typeof raw.rating === "number"
+            ? raw.rating
+            : 0,
+    ratingsCount:
+      typeof raw.ratingsCount === "number"
+        ? raw.ratingsCount
+        : typeof raw.ratingCount === "number"
+          ? raw.ratingCount
+          : typeof raw.totalRatings === "number"
+            ? raw.totalRatings
+            : 0,
+    myStars:
+      typeof raw.myStars === "number" || raw.myStars === null
+        ? raw.myStars
+        : typeof raw.userRating === "number"
+          ? raw.userRating
+          : typeof raw.myRating === "number"
+            ? raw.myRating
+            : null,
   };
 }
 
@@ -281,6 +315,41 @@ export const postService = {
 
   async upvotePost(id: string): Promise<void> {
     await apiClient.post(`/api/v1/posts/${id}/upvote`, {});
+  },
+
+  async ratePost(
+    id: string,
+    stars: number,
+    review?: string,
+  ): Promise<{
+    postId: string;
+    averageRating: number;
+    ratingsCount: number;
+    qualityScore?: number;
+    myStars: number;
+    myReview?: string;
+    message?: string;
+  }> {
+    return apiClient.post(`/api/v1/posts/${id}/rate`, { stars, review });
+  },
+
+  async deletePostRating(id: string): Promise<{
+    postId: string;
+    averageRating: number;
+    ratingsCount: number;
+    myStars: null;
+    message?: string;
+  }> {
+    return apiClient.delete(`/api/v1/posts/${id}/rate`);
+  },
+
+  async getPostRatings(id: string): Promise<{
+    postId: string;
+    averageRating: number;
+    ratingsCount: number;
+    myStars?: number | null;
+  }> {
+    return apiClient.get(`/api/v1/posts/${id}/ratings`);
   },
 
   async createSubject(payload: CreateSubjectPayload): Promise<Subject> {

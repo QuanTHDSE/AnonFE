@@ -38,6 +38,7 @@ export function CreatePostView() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [attachFiles, setAttachFiles] = useState<File[]>([]);
@@ -146,7 +147,11 @@ export function CreatePostView() {
   if (!isLoggedIn) return null;
 
   const canSubmit =
-    title.trim().length >= 5 && content.trim().length >= 10 && subjectId && !isLoading;
+    title.trim().length >= 5 &&
+    content.trim().length >= 10 &&
+    subjectId &&
+    acceptedTerms &&
+    !isLoading;
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex text-gray-900 font-sans selection:bg-orange-100 selection:text-[#F15B29]">
@@ -488,6 +493,39 @@ export function CreatePostView() {
                     }`}
                   />
                 </button>
+              </div>
+
+              {/* Terms Agreement Checkbox */}
+              <div className="flex items-start gap-3 p-4 bg-orange-50/50 rounded-2xl border border-orange-100/80">
+                <input
+                  type="checkbox"
+                  id="acceptTerms"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1 w-4 h-4 text-[#F15B29] accent-[#F15B29] rounded focus:ring-[#F15B29]/20 cursor-pointer shrink-0"
+                />
+                <label
+                  htmlFor="acceptTerms"
+                  className="text-xs sm:text-sm font-medium text-gray-700 cursor-pointer leading-relaxed select-none"
+                >
+                  Tôi xác nhận nội dung không vi phạm bản quyền, và đồng ý với{" "}
+                  <Link
+                    to="/policy"
+                    target="_blank"
+                    className="font-bold text-[#F15B29] hover:underline"
+                  >
+                    Điều khoản sử dụng
+                  </Link>{" "}
+                  &{" "}
+                  <Link
+                    to="/privacy"
+                    target="_blank"
+                    className="font-bold text-[#F15B29] hover:underline"
+                  >
+                    Chính sách bảo mật
+                  </Link>
+                  .
+                </label>
               </div>
             </div>
 

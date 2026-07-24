@@ -167,6 +167,9 @@ export interface FeedPostItem {
   likesCount: number;
   commentsCount: number;
   hasUpvoted?: boolean;
+  averageRating?: number;
+  ratingsCount?: number;
+  myStars?: number | null;
 }
 
 export interface PaginatedPostsResponse {

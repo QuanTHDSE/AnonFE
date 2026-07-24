@@ -22,6 +22,7 @@ import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import { postService } from "@/services/postService";
 import { bookmarkService } from "@/services/bookmarkService";
 import { CommentSection } from "@/features/posts/components/CommentSection";
+import { PostRating } from "@/features/posts/components/PostRating";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import type { FeedPostItem } from "@/types";
@@ -357,6 +358,12 @@ export function PostDetailView() {
                       <MessageSquare size={22} />
                       <span className="font-bold">{commentsCount}</span>
                     </button>
+                    <PostRating
+                      postId={post.id}
+                      initialAverageRating={post.averageRating}
+                      initialRatingsCount={post.ratingsCount}
+                      initialMyStars={post.myStars}
+                    />
                     <button className="flex items-center gap-2 text-gray-500 hover:text-green-500 transition-colors ml-auto">
                       <Share2 size={22} />
                       <span className="font-bold text-sm">Chia sẻ</span>
