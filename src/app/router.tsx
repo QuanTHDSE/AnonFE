@@ -81,6 +81,10 @@ export const appRoutes: RouteObject[] = [
         Component: PrivacyPage,
       },
       {
+        path: "following",
+        Component: FollowingView,
+      },
+      {
         Component: ProtectedRoute,
         children: [
           {
@@ -98,10 +102,6 @@ export const appRoutes: RouteObject[] = [
           {
             path: "bookmarks",
             Component: BookmarksView,
-          },
-          {
-            path: "following",
-            Component: FollowingView,
           },
           {
             path: "profile",

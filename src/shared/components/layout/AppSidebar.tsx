@@ -70,7 +70,7 @@ export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
         <SidebarItem
           icon={Users}
           active={activeItem === "following"}
-          onClick={() => goProtected("/following")}
+          onClick={() => navigate("/following")}
         />
         <SidebarItem
           icon={Crown}

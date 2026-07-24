@@ -7,7 +7,9 @@ import {
   MessageSquare,
   Search,
   Share2,
+  Star,
   TrendingUp,
+  Trophy,
   User,
   Users,
 } from "lucide-react";
@@ -22,7 +24,7 @@ import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
 import { SubscriptionPeekDialog } from "@/shared/components/SubscriptionPeekDialog";
 import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
-import { getUserPremium } from "@/services/userService";
+import { getUserPremium, userService, type TopContributor } from "@/services/userService";
 import { PostRating } from "@/features/posts/components/PostRating";
 import type { FeedPostItem } from "@/types";
 
@@ -276,6 +278,8 @@ export function HomeView() {
 
   const [posts, setPosts] = useState<FeedPostItem[]>([]);
   const [trends, setTrends] = useState<TrendingTag[]>([]);
+  const [topContributors, setTopContributors] = useState<TopContributor[]>([]);
+  const [isLoadingContributors, setIsLoadingContributors] = useState(true);
   const [bookmarkedPostIds, setBookmarkedPostIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -351,6 +355,15 @@ export function HomeView() {
       .getTrendingTags()
       .then(setTrends)
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setIsLoadingContributors(true);
+    userService
+      .getTopContributors(5)
+      .then((res) => setTopContributors(res.contributors ?? []))
+      .catch(() => {})
+      .finally(() => setIsLoadingContributors(false));
   }, []);
 
   const handleSearchChange = (val: string) => {
@@ -551,6 +564,114 @@ export function HomeView() {
 
         {/* Right Sidebar - Desktop Only */}
         <aside className="hidden xl:block w-[320px] 2xl:w-[380px] p-6 sticky top-0 h-screen overflow-y-auto">
+          {/* Top Contributors Card */}
+          <div className="bg-white rounded-[32px] border border-gray-100 p-6 xl:p-8 shadow-sm mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
+                  <Trophy size={20} className="text-amber-500" />
+                  Top Contributors
+                </h2>
+                <p className="text-xs text-gray-400 font-medium mt-0.5">Thành viên tích cực tháng này</p>
+              </div>
+            </div>
+
+            {isLoadingContributors ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3 animate-pulse">
+                    <div className="w-10 h-10 rounded-full bg-gray-200" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3.5 bg-gray-200 rounded w-24" />
+                      <div className="h-2.5 bg-gray-100 rounded w-16" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : topContributors.length === 0 ? (
+              <p className="text-sm text-gray-400 font-medium py-2">
+                Chưa có đóng góp nào trong tháng này.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {topContributors.map((c) => {
+                  const isOwn = user?.id === c.userId;
+                  const profileUrl = isOwn ? "/profile" : `/users/${c.userId}`;
+                  const rankMedals: Record<number, { bg: string; text: string }> = {
+                    1: { bg: "bg-amber-100 text-amber-700 border-amber-300", text: "🥇" },
+                    2: { bg: "bg-slate-100 text-slate-700 border-slate-300", text: "🥈" },
+                    3: { bg: "bg-amber-900/10 text-amber-800 border-amber-900/20", text: "🥉" },
+                  };
+                  const medal = rankMedals[c.rank];
+
+                  return (
+                    <div
+                      key={c.userId}
+                      className="flex items-center justify-between group p-1.5 -mx-1.5 rounded-2xl hover:bg-orange-50/50 transition-all"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Rank & Avatar */}
+                        <div className="relative shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border border-gray-100 flex items-center justify-center font-bold text-gray-600 text-sm">
+                            {c.avatarUrl ? (
+                              <img
+                                src={c.avatarUrl}
+                                alt={c.displayName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span>{c.displayName.slice(0, 2).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <span
+                            className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-[10px] font-extrabold flex items-center justify-center border shadow-xs ${
+                              medal
+                                ? medal.bg
+                                : "bg-gray-100 text-gray-500 border-gray-200"
+                            }`}
+                          >
+                            {medal ? medal.text : c.rank}
+                          </span>
+                        </div>
+
+                        {/* User Info */}
+                        <div className="min-w-0">
+                          <Link
+                            to={profileUrl}
+                            className="font-bold text-sm text-gray-900 hover:text-[#F15B29] transition-colors truncate block"
+                          >
+                            {c.displayName}
+                          </Link>
+                          <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mt-0.5">
+                            <span>{c.postsCount} bài viết</span>
+                            <span>·</span>
+                            <span className="text-amber-600 font-bold">{c.contributionScore} điểm</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Average Rating Badge */}
+                      {c.averageRating > 0 && (
+                        <div className="flex items-center gap-0.5 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100 shrink-0">
+                          <Star size={11} className="fill-amber-400 text-amber-400" />
+                          <span>{c.averageRating.toFixed(1)}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Leaderboard Link */}
+                <Link
+                  to="/leaderboard"
+                  className="block text-center text-xs font-bold text-[#F15B29] hover:underline pt-2"
+                >
+                  Xem toàn bộ Bảng xếp hạng →
+                </Link>
+              </div>
+            )}
+          </div>
+
           <div className="bg-white rounded-[32px] border border-gray-100 p-6 xl:p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-bold text-gray-900">Trending Now</h2>

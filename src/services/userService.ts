@@ -16,6 +16,26 @@ export interface UserProfile {
   isAnonDefault?: boolean;
 }
 
+export interface TopContributor {
+  rank: number;
+  userId: string;
+  username: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  isAnonymous: boolean;
+  postsCount: number;
+  commentsCount: number;
+  upvotesReceived: number;
+  averageRating: number;
+  contributionScore: number;
+}
+
+export interface TopContributorsResponse {
+  month: number;
+  year: number;
+  contributors: TopContributor[];
+}
+
 export interface UpdateUserPayload {
   username?: string | null;
   bio?: string | null;
@@ -43,6 +63,20 @@ export const userService = {
 
   async getUsers(page = 1, pageSize = 10): Promise<PaginatedUsersResponse> {
     return apiClient.get<PaginatedUsersResponse>(`/api/v1/users?page=${page}&pageSize=${pageSize}`);
+  },
+
+  async getTopContributors(
+    limit = 5,
+    month?: number,
+    year?: number,
+  ): Promise<TopContributorsResponse> {
+    const query = new URLSearchParams();
+    query.set("limit", String(limit));
+    if (month) query.set("month", String(month));
+    if (year) query.set("year", String(year));
+    return apiClient.get<TopContributorsResponse>(
+      `/api/v1/users/top-contributors?${query.toString()}`,
+    );
   },
 
   // PUT /api/v1/users/me accepts Username, Bio, Avatar and AnonAlias (multipart).
