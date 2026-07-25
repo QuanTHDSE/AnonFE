@@ -18,7 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";
 import { postService, type TrendingTag } from "@/services/postService";
 import { bookmarkService } from "@/services/bookmarkService";
@@ -50,10 +50,12 @@ const PostCard = ({
   post,
   premiumUserIds,
   bookmarkedPostIds,
+  onTagClick,
 }: {
   post: FeedPostItem;
   premiumUserIds: Set<string>;
   bookmarkedPostIds: Set<string>;
+  onTagClick?: (tag: string) => void;
 }) => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
@@ -237,7 +239,11 @@ const PostCard = ({
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="text-[#F15B29] font-semibold text-sm hover:underline cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTagClick?.(tag);
+                }}
+                className="text-[#F15B29] font-semibold text-sm hover:underline cursor-pointer transition-colors hover:text-[#d94a1d]"
               >
                 #{tag}
               </span>
@@ -327,8 +333,25 @@ export function HomeView() {
       cancelled = true;
     };
   }, [posts, isPremium, user?.id]);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+
+  useEffect(() => {
+    const qParam = searchParams.get("q") || searchParams.get("tag") || "";
+    setSearchInput(qParam);
+    setSearch(qParam);
+  }, [searchParams]);
+
+  const handleTagClick = useCallback(
+    (tag: string) => {
+      setSearchInput(tag);
+      setSearch(tag);
+      setSearchParams({ q: tag });
+    },
+    [setSearchParams],
+  );
+
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -631,9 +654,9 @@ export function HomeView() {
 
             {/* Loading skeleton */}
             {isLoading && (
-              <div className="columns-1 lg:columns-2 gap-6 md:gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start pb-8">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="break-inside-avoid w-full mb-8">
+                  <div key={i} className="w-full mb-8">
                     <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm animate-pulse">
                       <div className="p-6 flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-gray-200" />
@@ -718,13 +741,14 @@ export function HomeView() {
                       </div>
                     ) : (
                       posts.length > 0 && (
-                        <div className="columns-1 lg:columns-2 gap-6 md:gap-8 pb-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 items-start pb-8">
                           {posts.map((post) => (
-                            <div key={post.id} className="break-inside-avoid w-full">
+                            <div key={post.id} className="w-full">
                               <PostCard
                                 post={post}
                                 premiumUserIds={premiumUserIds}
                                 bookmarkedPostIds={bookmarkedPostIds}
+                                onTagClick={handleTagClick}
                               />
                             </div>
                           ))}

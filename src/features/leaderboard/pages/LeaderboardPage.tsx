@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Bell,
   ChevronUp,
@@ -7,6 +7,7 @@ import {
   Medal,
   MessageSquare,
   Search,
+  Star,
   Trophy,
   TrendingUp,
   User,
@@ -20,6 +21,7 @@ import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import type { LeaderboardPost } from "@/types";
 
 const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
+  const navigate = useNavigate();
   const isTop3 = post.rank <= 3;
 
   const getRankColors = (rank: number) => {
@@ -52,8 +54,9 @@ const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: post.rank * 0.1 }}
-      className={`relative bg-white rounded-3xl border ${isTop3 ? "border-[#F15B29]/20 shadow-lg shadow-orange-100/40" : "border-gray-100 shadow-sm"} p-6 flex flex-col md:flex-row items-start md:items-center gap-6 hover:shadow-md transition-shadow group`}
+      transition={{ delay: post.rank * 0.05 }}
+      onClick={() => navigate(`/posts/${post.id}`)}
+      className={`relative bg-white rounded-3xl border ${isTop3 ? "border-[#F15B29]/20 shadow-lg shadow-orange-100/40" : "border-gray-100 shadow-sm"} p-6 flex flex-col md:flex-row items-start md:items-center gap-6 hover:shadow-md transition-all cursor-pointer group`}
     >
       {/* Rank Indicator */}
       <div
@@ -64,7 +67,7 @@ const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
 
       {/* Post Thumbnail & Info */}
       <div className="flex items-center gap-4 flex-1 w-full">
-        <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border border-gray-100 shrink-0">
+        <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
           <ImageWithFallback
             src={post.image}
             alt={post.title}
@@ -77,7 +80,7 @@ const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
           </h3>
 
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full overflow-hidden">
+            <div className="w-6 h-6 rounded-full overflow-hidden bg-orange-100">
               <ImageWithFallback
                 src={post.author.avatar}
                 alt={post.author.name}
@@ -95,31 +98,38 @@ const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
       </div>
 
       {/* Stats */}
-      <div className="flex items-center gap-8 w-full md:w-auto mt-4 md:mt-0 justify-between md:justify-end px-4 md:px-0 border-t border-gray-100 md:border-t-0 pt-4 md:pt-0">
-        <div className="flex flex-col items-center md:items-end">
-          <span className="text-sm text-gray-500 font-medium mb-1">Likes</span>
-          <div className="flex items-center gap-2">
-            <Heart size={18} className="text-rose-500 fill-rose-500" />
-            <span className="font-extrabold text-xl text-gray-900">
+      <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 md:gap-5 w-full md:w-auto mt-4 md:mt-0 px-4 md:px-0 border-t border-gray-100 md:border-t-0 pt-4 md:pt-0 shrink-0">
+        <div className="flex flex-col items-center">
+          <span className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Likes</span>
+          <div className="flex items-center justify-center gap-1.5 h-7">
+            <Heart size={18} className="text-rose-500 fill-rose-500 shrink-0" />
+            <span className="font-bold text-lg text-gray-900 leading-none">
               {post.likes.toLocaleString()}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col items-center md:items-end">
-          <span className="text-sm text-gray-500 font-medium mb-1">Comments</span>
-          <div className="flex items-center gap-2">
-            <MessageSquare size={18} className="text-blue-500" />
-            <span className="font-bold text-lg text-gray-700">
+        <div className="flex flex-col items-center">
+          <span className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Comments</span>
+          <div className="flex items-center justify-center gap-1.5 h-7">
+            <MessageSquare size={18} className="text-blue-500 shrink-0" />
+            <span className="font-bold text-lg text-gray-900 leading-none">
               {post.comments.toLocaleString()}
             </span>
           </div>
         </div>
 
-        <div className="hidden sm:flex flex-col items-center justify-center w-12">
-          {post.trend === "up" && <ChevronUp size={24} className="text-green-500" />}
-          {post.trend === "down" && <ChevronUp size={24} className="text-red-500 rotate-180" />}
-          {post.trend === "same" && <div className="w-4 h-1 bg-gray-300 rounded-full" />}
+        <div className="flex flex-col items-center">
+          <span className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Rating</span>
+          <div className="flex items-center justify-center gap-1.5 h-7">
+            <Star size={18} className="text-amber-400 fill-amber-400 shrink-0" />
+            <span className="font-bold text-lg text-gray-900 leading-none">
+              {(post.averageRating ?? 0).toFixed(1)}
+            </span>
+            <span className="text-xs text-gray-400 font-medium leading-none">
+              ({post.ratingsCount ?? 0})
+            </span>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -224,7 +234,7 @@ export function LeaderboardView() {
         {/* Categories */}
         <div className="mb-6 overflow-x-auto hide-scrollbar">
           <div className="flex items-center gap-2 min-w-max pb-2">
-            {categories.map((category) => (
+            {categories.map((category: string) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}

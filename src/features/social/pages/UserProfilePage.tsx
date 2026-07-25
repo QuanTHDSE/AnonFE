@@ -44,6 +44,7 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 function PostCardItem({ post }: { post: FeedPostItem }) {
+  const navigate = useNavigate();
   const images = post.images ?? [];
   const tags = post.tags ?? [];
   const [commentsCount, setCommentsCount] = useState(post.commentsCount);
@@ -100,7 +101,14 @@ function PostCardItem({ post }: { post: FeedPostItem }) {
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {tags.slice(0, 4).map((tag) => (
-              <span key={tag} className="text-xs text-[#F15B29] font-semibold">
+              <span
+                key={tag}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/?q=${encodeURIComponent(tag)}`);
+                }}
+                className="text-xs text-[#F15B29] font-semibold hover:underline cursor-pointer"
+              >
                 #{tag}
               </span>
             ))}

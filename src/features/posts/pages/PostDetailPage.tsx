@@ -302,12 +302,14 @@ export function PostDetailView() {
                   {tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-8">
                       {tags.map((tag) => (
-                        <span
+                        <button
                           key={tag}
-                          className="px-3 py-1 bg-orange-50 border border-orange-100 text-[#F15B29] text-sm font-bold rounded-full"
+                          type="button"
+                          onClick={() => navigate(`/?q=${encodeURIComponent(tag)}`)}
+                          className="px-3 py-1 bg-orange-50 border border-orange-100 text-[#F15B29] hover:bg-[#F15B29] hover:text-white text-sm font-bold rounded-full transition-all cursor-pointer shadow-2xs hover:shadow-xs"
                         >
                           #{tag}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   )}

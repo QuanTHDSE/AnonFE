@@ -31,7 +31,10 @@ export interface TrendingTag {
 interface RawMediaItem {
   id: string;
   fileUrl?: string | null;
+  publicUrl?: string | null;
   url?: string | null;
+  key?: string | null;
+  fileKey?: string | null;
   contentType?: string | null;
   originalFileName?: string | null;
   fileName?: string | null;
@@ -95,8 +98,9 @@ interface RawPaginatedPostsResponse {
 }
 
 function mapMedia(raw: RawMediaItem): PostMedia | null {
-  const url = raw.fileUrl ?? raw.url ?? null;
-  if (!url) return null;
+  const rawUrl = raw.publicUrl ?? raw.fileUrl ?? raw.url ?? raw.key ?? raw.fileKey ?? null;
+  if (!rawUrl) return null;
+  const url = toAbsoluteMediaUrl(rawUrl) ?? rawUrl;
   const type: PostMediaType = (raw.mediaType ?? "").toLowerCase() === "file" ? "File" : "Image";
   return {
     id: raw.id,

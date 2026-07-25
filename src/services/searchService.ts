@@ -30,6 +30,7 @@ export interface RawSearchPostDto {
   media?: Array<{
     id: string;
     fileKey: string;
+    fileUrl?: string;
     publicUrl: string;
     contentType?: string;
     displayOrder?: number;
@@ -127,10 +128,10 @@ export const searchService = {
       },
       images: (p.media ?? [])
         .filter((m) => m.mediaType === "Image" || m.contentType?.startsWith("image/"))
-        .map((m) => m.publicUrl),
+        .map((m) => m.fileUrl ?? m.publicUrl),
       media: (p.media ?? []).map((m) => ({
         id: m.id,
-        url: m.publicUrl,
+        url: m.fileUrl ?? m.publicUrl,
         contentType: m.contentType,
         fileName: m.originalFileName,
         fileSize: m.fileSize,
@@ -140,11 +141,11 @@ export const searchService = {
       tags: p.tags ?? [],
       subject: p.subjectId
         ? {
-            id: p.subjectId,
-            name: p.subjectName ?? "",
-            slug: "",
-            iconEmoji: "📚",
-          }
+          id: p.subjectId,
+          name: p.subjectName ?? "",
+          slug: "",
+          iconEmoji: "📚",
+        }
         : null,
       likesCount: p.upvotes ?? 0,
       commentsCount: p.commentsCount ?? 0,
@@ -214,15 +215,24 @@ export const searchService = {
       },
       images: (p.media ?? [])
         .filter((m) => m.mediaType === "Image" || m.contentType?.startsWith("image/"))
-        .map((m) => m.publicUrl),
+        .map((m) => m.fileUrl ?? m.publicUrl),
+      media: (p.media ?? []).map((m) => ({
+        id: m.id,
+        url: m.fileUrl ?? m.publicUrl,
+        contentType: m.contentType,
+        fileName: m.originalFileName,
+        fileSize: m.fileSize,
+        displayOrder: m.displayOrder,
+        mediaType: m.mediaType === "Image" ? "Image" : "File",
+      })),
       tags: p.tags ?? [],
       subject: p.subjectId
         ? {
-            id: p.subjectId,
-            name: p.subjectName ?? "",
-            slug: "",
-            iconEmoji: "📚",
-          }
+          id: p.subjectId,
+          name: p.subjectName ?? "",
+          slug: "",
+          iconEmoji: "📚",
+        }
         : null,
       likesCount: p.upvotes ?? 0,
       commentsCount: p.commentsCount ?? 0,

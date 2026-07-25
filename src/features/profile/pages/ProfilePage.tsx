@@ -67,6 +67,7 @@ interface PostCardProps {
 }
 
 const PostCard = ({ post, onEdit, onDelete }: PostCardProps) => {
+  const navigate = useNavigate();
   const images = post.images ?? [];
   const tags = post.tags ?? [];
   const [commentsCount, setCommentsCount] = useState(post.commentsCount);
@@ -150,7 +151,14 @@ const PostCard = ({ post, onEdit, onDelete }: PostCardProps) => {
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {tags.slice(0, 4).map((tag) => (
-              <span key={tag} className="text-xs text-[#F15B29] font-semibold">
+              <span
+                key={tag}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/?q=${encodeURIComponent(tag)}`);
+                }}
+                className="text-xs text-[#F15B29] font-semibold hover:underline cursor-pointer"
+              >
                 #{tag}
               </span>
             ))}

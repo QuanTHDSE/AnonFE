@@ -39,6 +39,8 @@ export interface LeaderboardPost {
   };
   likes: number;
   comments: number;
+  averageRating?: number;
+  ratingsCount?: number;
   timeAgo: string;
   trend: LeaderboardTrend;
   category: string;

@@ -43,6 +43,8 @@ function toLeaderboardPost(post: FeedPostItem, index: number): LeaderboardPost {
     },
     likes: post.likesCount,
     comments: post.commentsCount,
+    averageRating: post.averageRating ?? 0,
+    ratingsCount: post.ratingsCount ?? 0,
     timeAgo: relativeTime(post.createdAt),
     trend: "same",
     category: post.subject?.name ?? "Khác",
