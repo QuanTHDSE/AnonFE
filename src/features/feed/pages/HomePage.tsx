@@ -3,6 +3,7 @@ import {
   Bell,
   Bookmark,
   Facebook,
+  FileText,
   Flame,
   Heart,
   Loader2,
@@ -30,6 +31,8 @@ import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import { getUserPremium, userService, type TopContributor } from "@/services/userService";
 import { PostRating } from "@/features/posts/components/PostRating";
 import type { FeedPostItem, Subject } from "@/types";
+import { searchService, type SearchUserItem } from "@/services/searchService";
+import { SearchDropdown } from "@/shared/components/layout/SearchDropdown";
 
 function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -330,19 +333,34 @@ export function HomeView() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [pageUsers, setPageUsers] = useState<SearchUserItem[]>([]);
+  const [searchTab, setSearchTab] = useState<"all" | "posts" | "users">("all");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadPosts = useCallback(async (searchVal: string, pageNum: number, append: boolean) => {
     if (pageNum === 1) setIsLoading(true);
     else setIsLoadingMore(true);
     try {
-      const res = await postService.getPosts({
-        search: searchVal || undefined,
-        page: pageNum,
-        pageSize: PAGE_SIZE,
-      });
-      setPosts((prev) => (append ? [...prev, ...res.posts] : res.posts));
-      setTotalPages(res.totalPages);
+      if (searchVal && searchVal.trim()) {
+        const res = await searchService.searchAll(searchVal.trim(), 20);
+        setPosts(res.posts);
+        setPageUsers(res.users);
+        setTotalPages(1);
+      } else {
+        setPageUsers([]);
+        const res = await postService.getPosts({
+          search: undefined,
+          page: pageNum,
+          pageSize: PAGE_SIZE,
+        });
+        setPosts((prev) => (append ? [...prev, ...res.posts] : res.posts));
+        setTotalPages(res.totalPages);
+      }
+    } catch {
+      if (!append) {
+        setPosts([]);
+        setPageUsers([]);
+      }
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -375,10 +393,59 @@ export function HomeView() {
       .finally(() => setIsLoadingContributors(false));
   }, []);
 
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const [isSearchingDropdown, setIsSearchingDropdown] = useState(false);
+  const [dropdownPosts, setDropdownPosts] = useState<FeedPostItem[]>([]);
+  const [dropdownUsers, setDropdownUsers] = useState<SearchUserItem[]>([]);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleSearchChange = (val: string) => {
     setSearchInput(val);
+
     if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => setSearch(val), 400);
+
+    if (!val.trim()) {
+      setSearchDropdownOpen(false);
+      setSearch("");
+      return;
+    }
+
+    setIsSearchingDropdown(true);
+    setSearchDropdownOpen(true);
+
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const res = await searchService.searchAll(val, 5);
+        setDropdownPosts(res.posts);
+        setDropdownUsers(res.users);
+      } catch {
+        setDropdownPosts([]);
+        setDropdownUsers([]);
+      } finally {
+        setIsSearchingDropdown(false);
+      }
+    }, 350);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      setSearchDropdownOpen(false);
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+      const val = searchInput.trim();
+      setSearch(val);
+      (e.target as HTMLInputElement).blur();
+    }
   };
 
   const handleLoadMore = () => {
@@ -407,7 +474,7 @@ export function HomeView() {
             </div>
 
             <div className="flex flex-wrap items-center gap-4 xl:gap-6">
-              <div className="relative group flex-1 md:flex-none">
+              <div ref={searchContainerRef} className="relative group flex-1 md:flex-none">
                 <Search
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#F15B29] transition-colors"
                   size={18}
@@ -416,8 +483,21 @@ export function HomeView() {
                   type="text"
                   value={searchInput}
                   onChange={(e) => handleSearchChange(e.target.value)}
-                  placeholder="Search inspiration..."
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => {
+                    if (searchInput.trim()) setSearchDropdownOpen(true);
+                  }}
+                  placeholder="Tìm kiếm bài viết, tác giả..."
                   className="pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl w-full md:w-64 xl:w-80 focus:outline-none focus:ring-2 focus:ring-[#F15B29]/20 focus:border-[#F15B29] transition-all shadow-sm text-sm"
+                />
+
+                <SearchDropdown
+                  isOpen={searchDropdownOpen}
+                  isLoading={isSearchingDropdown}
+                  query={searchInput}
+                  posts={dropdownPosts}
+                  users={dropdownUsers}
+                  onClose={() => setSearchDropdownOpen(false)}
                 />
               </div>
 
@@ -487,10 +567,66 @@ export function HomeView() {
           {/* Main Feed Content */}
           <div className="w-full max-w-[1400px] mx-auto">
             {/* Section Header */}
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-lg font-extrabold text-gray-900">
-                {search ? `Kết quả cho "${search}"` : "Recommended for you"}
-              </h2>
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-extrabold text-gray-900 flex flex-wrap items-center gap-2">
+                  {search ? (
+                    <>
+                      <span>Kết quả cho "{search}"</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearch("");
+                          setSearchInput("");
+                          setSearchDropdownOpen(false);
+                        }}
+                        className="text-xs bg-gray-200 hover:bg-rose-100 hover:text-rose-600 font-bold px-3 py-1 rounded-full transition-colors"
+                      >
+                        Xóa tìm kiếm ✕
+                      </button>
+                    </>
+                  ) : (
+                    "Recommended for you"
+                  )}
+                </h2>
+                {search && (
+                  <p className="text-xs text-gray-400 font-medium mt-1">
+                    Tìm thấy {posts.length} bài viết và {pageUsers.length} tác giả
+                  </p>
+                )}
+              </div>
+
+              {search && (
+                <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-2xl text-xs font-bold text-gray-600 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSearchTab("all")}
+                    className={`px-3.5 py-1.5 rounded-xl transition-all ${
+                      searchTab === "all" ? "bg-white text-[#F15B29] shadow-sm" : "hover:text-gray-900"
+                    }`}
+                  >
+                    Tất cả ({posts.length + pageUsers.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchTab("posts")}
+                    className={`px-3.5 py-1.5 rounded-xl transition-all ${
+                      searchTab === "posts" ? "bg-white text-[#F15B29] shadow-sm" : "hover:text-gray-900"
+                    }`}
+                  >
+                    Bài viết ({posts.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchTab("users")}
+                    className={`px-3.5 py-1.5 rounded-xl transition-all ${
+                      searchTab === "users" ? "bg-white text-[#F15B29] shadow-sm" : "hover:text-gray-900"
+                    }`}
+                  >
+                    Tác giả ({pageUsers.length})
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Loading skeleton */}
@@ -519,29 +655,84 @@ export function HomeView() {
               </div>
             )}
 
-            {/* Feed Grid */}
+            {/* Feed Grid & Users Grid */}
             {!isLoading && (
               <>
-                {posts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-                    <Search size={48} className="mb-4 opacity-30" />
-                    <p className="font-bold text-lg">Không tìm thấy bài viết nào</p>
-                    {search && <p className="text-sm mt-1">Thử từ khóa khác</p>}
-                  </div>
-                ) : (
-                  <div className="columns-1 lg:columns-2 gap-6 md:gap-8 pb-8">
-                    {posts.map((post) => (
-                      <div key={post.id} className="break-inside-avoid w-full">
-                        <PostCard
-                          post={post}
-                          premiumUserIds={premiumUserIds}
-                          bookmarkedPostIds={bookmarkedPostIds}
-                        />
-                      </div>
-                    ))}
+                {/* On-page Search Users Section */}
+                {search && (searchTab === "all" || searchTab === "users") && pageUsers.length > 0 && (
+                  <div className="mb-10">
+                    <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <Users size={16} className="text-[#F15B29]" />
+                      Tác giả / Người dùng ({pageUsers.length})
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {pageUsers.map((u) => (
+                        <div
+                          key={u.id}
+                          onClick={() => navigate(`/users/${u.id}`)}
+                          className="bg-white rounded-3xl border border-gray-100 p-4 flex items-center justify-between hover:shadow-md hover:border-orange-200 transition-all cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-[#F15B29] overflow-hidden flex-shrink-0">
+                              {u.avatarUrl ? (
+                                <ImageWithFallback
+                                  src={u.avatarUrl}
+                                  alt={u.username}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <User size={20} strokeWidth={2.5} />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#F15B29] transition-colors truncate">
+                                {u.username}
+                              </h4>
+                              <p className="text-xs text-gray-400 truncate">@{u.anonAlias}</p>
+                              <p className="text-[11px] text-gray-500 font-medium mt-0.5">
+                                {u.followerCount} người theo dõi
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
+                {/* On-page Search Posts Section */}
+                {(searchTab === "all" || searchTab === "posts") && (
+                  <>
+                    {search && pageUsers.length > 0 && posts.length > 0 && (
+                      <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <FileText size={16} className="text-[#F15B29]" />
+                        Bài viết ({posts.length})
+                      </h3>
+                    )}
+
+                    {posts.length === 0 && (searchTab === "posts" || (searchTab === "all" && pageUsers.length === 0)) ? (
+                      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                        <Search size={48} className="mb-4 opacity-30" />
+                        <p className="font-bold text-lg">Không tìm thấy kết quả nào</p>
+                        {search && <p className="text-sm mt-1">Thử từ khóa khác hoặc xóa bộ lọc tìm kiếm</p>}
+                      </div>
+                    ) : (
+                      posts.length > 0 && (
+                        <div className="columns-1 lg:columns-2 gap-6 md:gap-8 pb-8">
+                          {posts.map((post) => (
+                            <div key={post.id} className="break-inside-avoid w-full">
+                              <PostCard
+                                post={post}
+                                premiumUserIds={premiumUserIds}
+                                bookmarkedPostIds={bookmarkedPostIds}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    )}
+                  </>
+                )}
                 {/* Load more */}
                 {page < totalPages && (
                   <div className="flex justify-center pb-20">
