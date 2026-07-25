@@ -7,6 +7,7 @@ import {
   Calendar,
   Camera,
   Crown,
+  EyeOff,
   FileText,
   Heart,
   Loader2,
@@ -206,6 +207,23 @@ export function ProfileView() {
   const [anonImagesError, setAnonImagesError] = useState("");
   const [selectedAnonImageId, setSelectedAnonImageId] = useState<string | null>(null);
   const [initialAnonImageId, setInitialAnonImageId] = useState<string | null>(null);
+
+  const [isTogglingAnon, setIsTogglingAnon] = useState(false);
+
+  const handleQuickToggleAnon = async () => {
+    if (isTogglingAnon) return;
+    setIsTogglingAnon(true);
+    try {
+      await userService.toggleAnonDefault();
+      const updated = await userService.getMe();
+      setProfile(updated);
+      refreshProfile();
+    } catch (err) {
+      console.error("Toggle anon default failed", err);
+    } finally {
+      setIsTogglingAnon(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -414,10 +432,36 @@ export function ProfileView() {
                   <p className="text-gray-500 font-medium text-sm mb-1">
                     {profile?.email ?? user?.email}
                   </p>
-                  <p className="text-sm text-gray-400 font-medium mb-3">
-                    Alias ẩn danh:{" "}
-                    <span className="font-bold text-gray-600">{profile?.anonAlias ?? "—"}</span>
-                  </p>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mb-3">
+                    <p className="text-sm text-gray-400 font-medium">
+                      Alias ẩn danh:{" "}
+                      <span className="font-bold text-gray-600">{profile?.anonAlias ?? "—"}</span>
+                    </p>
+
+                    {/* Quick Toggle Switch on Profile Card */}
+                    <div className="flex items-center gap-2 px-3 py-1 bg-orange-50/80 border border-orange-100 rounded-full shadow-xs">
+                      <EyeOff
+                        size={14}
+                        className={profile?.isAnonDefault ? "text-[#F15B29]" : "text-gray-400"}
+                      />
+                      <span className="text-xs font-bold text-gray-700">Mặc định ẩn danh</span>
+                      <button
+                        type="button"
+                        disabled={isTogglingAnon}
+                        onClick={handleQuickToggleAnon}
+                        title="Bật/tắt chế độ mặc định đăng bài ẩn danh"
+                        className={`relative w-9 h-5 rounded-full transition-colors duration-300 focus:outline-none shrink-0 ${
+                          profile?.isAnonDefault ? "bg-[#F15B29]" : "bg-gray-300"
+                        } ${isTogglingAnon ? "opacity-50 cursor-wait" : "cursor-pointer"}`}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-300 shadow-sm ${
+                            profile?.isAnonDefault ? "translate-x-4" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
                   {profile?.bio && (
                     <p className="text-sm text-gray-600 font-medium mb-3 max-w-md">{profile.bio}</p>
                   )}
@@ -596,15 +640,15 @@ export function ProfileView() {
 
       {/* Edit Profile Dialog */}
       <Dialog open={isEditOpen} onOpenChange={(open) => !open && setIsEditOpen(false)}>
-        <DialogContent className="rounded-3xl border-gray-100 max-w-md">
-          <DialogHeader>
+        <DialogContent className="rounded-3xl border-gray-100 max-w-md max-h-[85vh] flex flex-col p-6 overflow-hidden">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="text-xl font-extrabold">Chỉnh sửa hồ sơ</DialogTitle>
             <DialogDescription className="text-gray-500 font-medium">
               Cập nhật thông tin cá nhân của bạn
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 py-2 flex-1 overflow-y-auto pr-1">
             {/* Avatar upload */}
             <div className="flex flex-col items-center gap-3">
               <div className="relative group">
@@ -774,7 +818,7 @@ export function ProfileView() {
             )}
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="shrink-0 pt-3 border-t border-gray-100 gap-2">
             <button
               onClick={() => setIsEditOpen(false)}
               disabled={isSaving}
