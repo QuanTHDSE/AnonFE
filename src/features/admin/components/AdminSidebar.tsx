@@ -4,6 +4,7 @@ import {
   CreditCard,
   Crown,
   FileText,
+  History,
   Image as ImageIcon,
   KeyRound,
   LayoutDashboard,
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Subscription", icon: CreditCard, path: "/admin/subscriptions" },
   { label: "Ảnh ẩn danh", icon: ImageIcon, path: "/admin/anon-images" },
   { label: "Phân quyền", icon: KeyRound, path: "/admin/roles" },
+  { label: "Nhật ký hoạt động", icon: History, path: "/admin/activity-logs" },
 ];
 
 export function AdminSidebar() {
