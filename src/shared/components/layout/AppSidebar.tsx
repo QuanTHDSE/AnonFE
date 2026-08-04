@@ -4,7 +4,6 @@ import {
   Home,
   type LucideIcon,
   Plus,
-  Settings,
   Shield,
   TrendingUp,
   Users,
@@ -126,8 +125,8 @@ export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
         )}
       </nav>
 
-      <div className="mt-auto flex flex-col gap-3">
-        {isAdmin && (
+      {isAdmin && (
+        <div className="mt-auto flex flex-col gap-3">
           <motion.div
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
@@ -137,9 +136,8 @@ export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
           >
             <Shield size={24} strokeWidth={2.5} />
           </motion.div>
-        )}
-        <SidebarItem icon={Settings} />
-      </div>
+        </div>
+      )}
     </aside>
   );
 }

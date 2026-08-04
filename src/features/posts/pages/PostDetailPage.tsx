@@ -25,6 +25,7 @@ import { CommentSection } from "@/features/posts/components/CommentSection";
 import { PostRating } from "@/features/posts/components/PostRating";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
+import { usePostShare } from "@/shared/hooks/usePostShare";
 import type { FeedPostItem } from "@/types";
 
 function formatDate(dateStr: string): string {
@@ -58,6 +59,7 @@ export function PostDetailView() {
   const [isUpvoting, setIsUpvoting] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isBookmarking, setIsBookmarking] = useState(false);
+  const { feedbackMessage, isSharing, share } = usePostShare(id, post?.title);
 
   useEffect(() => {
     if (!id) return;
@@ -366,10 +368,21 @@ export function PostDetailView() {
                       initialRatingsCount={post.ratingsCount}
                       initialMyStars={post.myStars}
                     />
-                    <button className="flex items-center gap-2 text-gray-500 hover:text-green-500 transition-colors ml-auto">
+                    <button
+                      type="button"
+                      onClick={() => void share()}
+                      disabled={isSharing}
+                      className="flex items-center gap-2 text-gray-500 hover:text-green-500 transition-colors ml-auto disabled:opacity-50"
+                      title="Chia sẻ bài viết"
+                    >
                       <Share2 size={22} />
                       <span className="font-bold text-sm">Chia sẻ</span>
                     </button>
+                    {feedbackMessage && (
+                      <span className="text-xs font-semibold text-green-600" role="status">
+                        {feedbackMessage}
+                      </span>
+                    )}
                   </div>
                 </div>
                 {/* Comment Section */}

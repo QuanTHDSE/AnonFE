@@ -33,6 +33,7 @@ import { PostRating } from "@/features/posts/components/PostRating";
 import type { FeedPostItem, Subject } from "@/types";
 import { searchService, type SearchUserItem } from "@/services/searchService";
 import { SearchDropdown } from "@/shared/components/layout/SearchDropdown";
+import { usePostShare } from "@/shared/hooks/usePostShare";
 
 function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -69,6 +70,7 @@ const PostCard = ({
   const [isBookmarking, setIsBookmarking] = useState(false);
   const [commentsCount, setCommentsCount] = useState(post.commentsCount);
   const [subPeekOpen, setSubPeekOpen] = useState(false);
+  const { feedbackMessage, isSharing, share } = usePostShare(post.id, post.title);
 
   useEffect(() => {
     setIsBookmarked(bookmarkedPostIds.has(post.id));
@@ -273,9 +275,30 @@ const PostCard = ({
             initialRatingsCount={post.ratingsCount}
             initialMyStars={post.myStars}
           />
-          <button className="text-gray-500 hover:text-green-500 transition-colors ml-auto">
-            <Share2 size={20} />
-          </button>
+          <div className="relative ml-auto flex items-center">
+            {feedbackMessage && (
+              <span
+                role="status"
+                className="absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs font-semibold text-white shadow-lg"
+              >
+                {feedbackMessage}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void share();
+              }}
+              disabled={isSharing}
+              className="text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50"
+              title="Chia sẻ bài viết"
+              aria-label="Chia sẻ bài viết"
+            >
+              <Share2 size={20} />
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
