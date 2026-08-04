@@ -104,7 +104,7 @@ export const userService = {
   },
 
   async deleteUser(id: string): Promise<void> {
-    await apiClient.delete(`/api/v1/users/${id}`);
+    await apiClient.delete(`/api/v1/users/${id}/permanent`);
   },
 };
 
