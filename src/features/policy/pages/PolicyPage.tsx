@@ -57,7 +57,8 @@ export function PolicyPage() {
             Điều khoản sử dụng
           </h1>
           <p className="mt-3 text-sm text-gray-500 font-medium">
-            Cập nhật lần cuối: 24/07/2026. Xin vui lòng đọc kỹ các cam kết về nội dung và bản quyền trước khi đăng tải.
+            Cập nhật lần cuối: 24/07/2026. Xin vui lòng đọc kỹ các cam kết về nội dung và bản quyền
+            trước khi đăng tải.
           </p>
         </div>
 
@@ -68,7 +69,9 @@ export function PolicyPage() {
             Cam kết quan trọng về Bản quyền
           </p>
           <p className="text-amber-900/90 font-medium text-xs sm:text-sm leading-relaxed">
-            Khi bấm nút <strong>"Đăng bài"</strong>, bạn cam kết rằng mọi hình ảnh, tệp tin và nội dung do bạn tải lên hoàn toàn thuộc sở hữu của bạn hoặc đã có sự cho phép hợp pháp. Bạn chịu hoàn toàn trách nhiệm trước pháp luật nếu có tranh chấp bản quyền xảy ra.
+            Khi bấm nút <strong>"Đăng bài"</strong>, bạn cam kết rằng mọi hình ảnh, tệp tin và nội
+            dung do bạn tải lên hoàn toàn thuộc sở hữu của bạn hoặc đã có sự cho phép hợp pháp. Bạn
+            chịu hoàn toàn trách nhiệm trước pháp luật nếu có tranh chấp bản quyền xảy ra.
           </p>
         </div>
 
@@ -99,8 +102,12 @@ export function PolicyPage() {
               <HelpCircle size={20} />
             </div>
             <div>
-              <p className="text-sm font-bold text-gray-900">Góp ý & Thắc mắc về điều khoản bản quyền?</p>
-              <p className="text-xs text-gray-500 font-medium">Liên hệ bộ phận quản trị trong phần Hồ sơ tài khoản</p>
+              <p className="text-sm font-bold text-gray-900">
+                Góp ý & Thắc mắc về điều khoản bản quyền?
+              </p>
+              <p className="text-xs text-gray-500 font-medium">
+                Liên hệ bộ phận quản trị trong phần Hồ sơ tài khoản
+              </p>
             </div>
           </div>
           <Link

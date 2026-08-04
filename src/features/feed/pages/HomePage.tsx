@@ -648,7 +648,9 @@ export function HomeView() {
                     type="button"
                     onClick={() => setSearchTab("all")}
                     className={`px-3.5 py-1.5 rounded-xl transition-all ${
-                      searchTab === "all" ? "bg-white text-[#F15B29] shadow-sm" : "hover:text-gray-900"
+                      searchTab === "all"
+                        ? "bg-white text-[#F15B29] shadow-sm"
+                        : "hover:text-gray-900"
                     }`}
                   >
                     Tất cả ({posts.length + pageUsers.length})
@@ -657,7 +659,9 @@ export function HomeView() {
                     type="button"
                     onClick={() => setSearchTab("posts")}
                     className={`px-3.5 py-1.5 rounded-xl transition-all ${
-                      searchTab === "posts" ? "bg-white text-[#F15B29] shadow-sm" : "hover:text-gray-900"
+                      searchTab === "posts"
+                        ? "bg-white text-[#F15B29] shadow-sm"
+                        : "hover:text-gray-900"
                     }`}
                   >
                     Bài viết ({posts.length})
@@ -666,7 +670,9 @@ export function HomeView() {
                     type="button"
                     onClick={() => setSearchTab("users")}
                     className={`px-3.5 py-1.5 rounded-xl transition-all ${
-                      searchTab === "users" ? "bg-white text-[#F15B29] shadow-sm" : "hover:text-gray-900"
+                      searchTab === "users"
+                        ? "bg-white text-[#F15B29] shadow-sm"
+                        : "hover:text-gray-900"
                     }`}
                   >
                     Tác giả ({pageUsers.length})
@@ -705,46 +711,48 @@ export function HomeView() {
             {!isLoading && (
               <>
                 {/* On-page Search Users Section */}
-                {search && (searchTab === "all" || searchTab === "users") && pageUsers.length > 0 && (
-                  <div className="mb-10">
-                    <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                      <Users size={16} className="text-[#F15B29]" />
-                      Tác giả / Người dùng ({pageUsers.length})
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {pageUsers.map((u) => (
-                        <div
-                          key={u.id}
-                          onClick={() => navigate(`/users/${u.id}`)}
-                          className="bg-white rounded-3xl border border-gray-100 p-4 flex items-center justify-between hover:shadow-md hover:border-orange-200 transition-all cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-[#F15B29] overflow-hidden flex-shrink-0">
-                              {u.avatarUrl ? (
-                                <ImageWithFallback
-                                  src={u.avatarUrl}
-                                  alt={u.username}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <User size={20} strokeWidth={2.5} />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#F15B29] transition-colors truncate">
-                                {u.username}
-                              </h4>
-                              <p className="text-xs text-gray-400 truncate">@{u.anonAlias}</p>
-                              <p className="text-[11px] text-gray-500 font-medium mt-0.5">
-                                {u.followerCount} người theo dõi
-                              </p>
+                {search &&
+                  (searchTab === "all" || searchTab === "users") &&
+                  pageUsers.length > 0 && (
+                    <div className="mb-10">
+                      <h3 className="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <Users size={16} className="text-[#F15B29]" />
+                        Tác giả / Người dùng ({pageUsers.length})
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {pageUsers.map((u) => (
+                          <div
+                            key={u.id}
+                            onClick={() => navigate(`/users/${u.id}`)}
+                            className="bg-white rounded-3xl border border-gray-100 p-4 flex items-center justify-between hover:shadow-md hover:border-orange-200 transition-all cursor-pointer group"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-[#F15B29] overflow-hidden flex-shrink-0">
+                                {u.avatarUrl ? (
+                                  <ImageWithFallback
+                                    src={u.avatarUrl}
+                                    alt={u.username}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <User size={20} strokeWidth={2.5} />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#F15B29] transition-colors truncate">
+                                  {u.username}
+                                </h4>
+                                <p className="text-xs text-gray-400 truncate">@{u.anonAlias}</p>
+                                <p className="text-[11px] text-gray-500 font-medium mt-0.5">
+                                  {u.followerCount} người theo dõi
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* On-page Search Posts Section */}
                 {(searchTab === "all" || searchTab === "posts") && (
@@ -756,11 +764,14 @@ export function HomeView() {
                       </h3>
                     )}
 
-                    {posts.length === 0 && (searchTab === "posts" || (searchTab === "all" && pageUsers.length === 0)) ? (
+                    {posts.length === 0 &&
+                    (searchTab === "posts" || (searchTab === "all" && pageUsers.length === 0)) ? (
                       <div className="flex flex-col items-center justify-center py-24 text-gray-400">
                         <Search size={48} className="mb-4 opacity-30" />
                         <p className="font-bold text-lg">Không tìm thấy kết quả nào</p>
-                        {search && <p className="text-sm mt-1">Thử từ khóa khác hoặc xóa bộ lọc tìm kiếm</p>}
+                        {search && (
+                          <p className="text-sm mt-1">Thử từ khóa khác hoặc xóa bộ lọc tìm kiếm</p>
+                        )}
                       </div>
                     ) : (
                       posts.length > 0 && (
@@ -819,7 +830,9 @@ export function HomeView() {
                   <Trophy size={20} className="text-amber-500" />
                   Top Contributors
                 </h2>
-                <p className="text-xs text-gray-400 font-medium mt-0.5">Thành viên tích cực tháng này</p>
+                <p className="text-xs text-gray-400 font-medium mt-0.5">
+                  Thành viên tích cực tháng này
+                </p>
               </div>
             </div>
 
@@ -872,9 +885,7 @@ export function HomeView() {
                           </div>
                           <span
                             className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-[10px] font-extrabold flex items-center justify-center border shadow-xs ${
-                              medal
-                                ? medal.bg
-                                : "bg-gray-100 text-gray-500 border-gray-200"
+                              medal ? medal.bg : "bg-gray-100 text-gray-500 border-gray-200"
                             }`}
                           >
                             {medal ? medal.text : c.rank}
@@ -892,7 +903,9 @@ export function HomeView() {
                           <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mt-0.5">
                             <span>{c.postsCount} bài viết</span>
                             <span>·</span>
-                            <span className="text-amber-600 font-bold">{c.contributionScore} điểm</span>
+                            <span className="text-amber-600 font-bold">
+                              {c.contributionScore} điểm
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -926,7 +939,9 @@ export function HomeView() {
                   <Flame size={20} className="text-[#F15B29]" />
                   Trending Now
                 </h2>
-                <p className="text-xs text-gray-400 font-medium mt-0.5">Chủ đề & thẻ thảo luận HOT</p>
+                <p className="text-xs text-gray-400 font-medium mt-0.5">
+                  Chủ đề & thẻ thảo luận HOT
+                </p>
               </div>
             </div>
 

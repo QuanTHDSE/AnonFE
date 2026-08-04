@@ -111,7 +111,9 @@ export function FollowingView() {
       <main className="flex-1 min-w-0 pt-6 px-4 md:px-8 lg:px-12 max-w-[960px] mx-auto w-full pb-20">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Cộng đồng & Kết nối</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            Cộng đồng & Kết nối
+          </h1>
           <p className="text-[#F15B29] font-semibold text-sm mt-1">
             {isLoggedIn
               ? "Khám phá các thành viên tích cực và danh sách theo dõi của bạn"
@@ -350,9 +352,12 @@ export function FollowingView() {
                 <div className="w-16 h-16 rounded-full bg-orange-50 text-[#F15B29] flex items-center justify-center mb-4">
                   <Lock size={32} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Đăng nhập để xem danh sách đang theo dõi</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Đăng nhập để xem danh sách đang theo dõi
+                </h3>
                 <p className="text-sm text-gray-500 max-w-sm mb-6 font-medium">
-                  Tạo tài khoản hoặc đăng nhập để theo dõi các tác giả yêu thích và xem danh sách tại đây.
+                  Tạo tài khoản hoặc đăng nhập để theo dõi các tác giả yêu thích và xem danh sách
+                  tại đây.
                 </p>
                 <div className="flex gap-3">
                   <button
@@ -454,7 +459,9 @@ export function FollowingView() {
                 <div className="w-16 h-16 rounded-full bg-orange-50 text-[#F15B29] flex items-center justify-center mb-4">
                   <Lock size={32} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Đăng nhập để xem danh sách người theo dõi</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  Đăng nhập để xem danh sách người theo dõi
+                </h3>
                 <p className="text-sm text-gray-500 max-w-sm mb-6 font-medium">
                   Tạo tài khoản hoặc đăng nhập để quản lý danh sách những người đang theo dõi bạn.
                 </p>

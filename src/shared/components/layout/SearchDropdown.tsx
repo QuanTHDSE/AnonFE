@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  FileText,
-  Heart,
-  Loader2,
-  MessageSquare,
-  Search,
-  User,
-  Users,
-} from "lucide-react";
+import { FileText, Heart, Loader2, MessageSquare, Search, User, Users } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router";
 import type { SearchUserItem } from "@/services/searchService";
@@ -65,9 +57,7 @@ export function SearchDropdown({
               type="button"
               onClick={() => setActiveTab("all")}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === "all"
-                  ? "bg-white text-[#F15B29] shadow-sm"
-                  : "hover:text-gray-900"
+                activeTab === "all" ? "bg-white text-[#F15B29] shadow-sm" : "hover:text-gray-900"
               }`}
             >
               Tất cả ({totalResults})
@@ -76,9 +66,7 @@ export function SearchDropdown({
               type="button"
               onClick={() => setActiveTab("posts")}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === "posts"
-                  ? "bg-white text-[#F15B29] shadow-sm"
-                  : "hover:text-gray-900"
+                activeTab === "posts" ? "bg-white text-[#F15B29] shadow-sm" : "hover:text-gray-900"
               }`}
             >
               Bài viết ({posts.length})
@@ -87,9 +75,7 @@ export function SearchDropdown({
               type="button"
               onClick={() => setActiveTab("users")}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === "users"
-                  ? "bg-white text-[#F15B29] shadow-sm"
-                  : "hover:text-gray-900"
+                activeTab === "users" ? "bg-white text-[#F15B29] shadow-sm" : "hover:text-gray-900"
               }`}
             >
               Tác giả ({users.length})

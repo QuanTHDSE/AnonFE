@@ -23,19 +23,51 @@ import {
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  activityLogService,
-  ActivityLogItem,
-} from "@/services/activityLogService";
+import { activityLogService, ActivityLogItem } from "@/services/activityLogService";
 
 const CATEGORIES = [
-  { id: "all", label: "Tất cả", icon: Activity, color: "bg-gray-100 text-gray-700 hover:bg-gray-200" },
-  { id: "Auth", label: "Xác thực", icon: KeyRound, color: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100" },
-  { id: "Post", label: "Bài viết", icon: FileText, color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
-  { id: "User", label: "Người dùng", icon: User, color: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100" },
-  { id: "Rating", label: "Đánh giá", icon: Star, color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100" },
-  { id: "Payment", label: "Thanh toán", icon: CreditCard, color: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100" },
-  { id: "Admin", label: "Hệ thống", icon: Shield, color: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100" },
+  {
+    id: "all",
+    label: "Tất cả",
+    icon: Activity,
+    color: "bg-gray-100 text-gray-700 hover:bg-gray-200",
+  },
+  {
+    id: "Auth",
+    label: "Xác thực",
+    icon: KeyRound,
+    color: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100",
+  },
+  {
+    id: "Post",
+    label: "Bài viết",
+    icon: FileText,
+    color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+  },
+  {
+    id: "User",
+    label: "Người dùng",
+    icon: User,
+    color: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100",
+  },
+  {
+    id: "Rating",
+    label: "Đánh giá",
+    icon: Star,
+    color: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100",
+  },
+  {
+    id: "Payment",
+    label: "Thanh toán",
+    icon: CreditCard,
+    color: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100",
+  },
+  {
+    id: "Admin",
+    label: "Hệ thống",
+    icon: Shield,
+    color: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100",
+  },
 ];
 
 export function AdminActivityLogsView() {
@@ -122,8 +154,7 @@ export function AdminActivityLogsView() {
   const getActionColor = (action: string) => {
     if (action.includes("CREATE") || action.includes("SUCCESS"))
       return "text-emerald-600 bg-emerald-50 border-emerald-200";
-    if (action.includes("DELETE"))
-      return "text-rose-600 bg-rose-50 border-rose-200";
+    if (action.includes("DELETE")) return "text-rose-600 bg-rose-50 border-rose-200";
     if (action.includes("UPDATE") || action.includes("CHANGE"))
       return "text-amber-600 bg-amber-50 border-amber-200";
     return "text-blue-600 bg-blue-50 border-blue-200";
@@ -243,7 +274,10 @@ export function AdminActivityLogsView() {
           {/* Search Bar Form */}
           <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full lg:w-72">
             <div className="relative flex-1">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+              />
               <input
                 type="text"
                 placeholder="Tìm kiếm hành động, user..."
@@ -305,10 +339,7 @@ export function AdminActivityLogsView() {
               </thead>
               <tbody className="divide-y divide-gray-100 text-xs">
                 {logs.map((log) => (
-                  <tr
-                    key={log.id}
-                    className="hover:bg-gray-50/60 transition-colors group"
-                  >
+                  <tr key={log.id} className="hover:bg-gray-50/60 transition-colors group">
                     {/* Timestamp */}
                     <td className="py-4 px-5 whitespace-nowrap text-gray-500 font-medium">
                       <div className="flex items-center gap-1.5">
@@ -321,7 +352,7 @@ export function AdminActivityLogsView() {
                     <td className="py-4 px-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold border ${getCategoryBadge(
-                          log.actionCategory
+                          log.actionCategory,
                         )}`}
                       >
                         {log.actionCategory}
@@ -332,7 +363,7 @@ export function AdminActivityLogsView() {
                     <td className="py-4 px-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border uppercase tracking-wider ${getActionColor(
-                          log.action
+                          log.action,
                         )}`}
                       >
                         {log.action}
@@ -390,7 +421,9 @@ export function AdminActivityLogsView() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-gray-400 mr-2">Trang {page} / {totalPages}</span>
+              <span className="text-gray-400 mr-2">
+                Trang {page} / {totalPages}
+              </span>
               <button
                 onClick={() => setPage((p) => Math.max(p - 1, 1))}
                 disabled={page <= 1}
@@ -454,7 +487,7 @@ export function AdminActivityLogsView() {
                     </p>
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-black border uppercase tracking-wider ${getActionColor(
-                        selectedLog.action
+                        selectedLog.action,
                       )}`}
                     >
                       {selectedLog.action}
@@ -467,7 +500,7 @@ export function AdminActivityLogsView() {
                     </p>
                     <span
                       className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getCategoryBadge(
-                        selectedLog.actionCategory
+                        selectedLog.actionCategory,
                       )}`}
                     >
                       {selectedLog.actionCategory}
@@ -479,7 +512,11 @@ export function AdminActivityLogsView() {
                       Người thực hiện
                     </p>
                     <p className="font-bold text-gray-900 text-sm">
-                      {selectedLog.userUsername ? `@${selectedLog.userUsername}` : selectedLog.userId ? selectedLog.userId : "Hệ thống / Vô danh"}
+                      {selectedLog.userUsername
+                        ? `@${selectedLog.userUsername}`
+                        : selectedLog.userId
+                          ? selectedLog.userId
+                          : "Hệ thống / Vô danh"}
                     </p>
                   </div>
 

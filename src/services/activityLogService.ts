@@ -43,6 +43,8 @@ export const activityLogService = {
     if (params?.category) query.set("category", params.category);
     if (params?.search) query.set("search", params.search);
 
-    return apiClient.get<ActivityLogListResponse>(`/api/v1/admin/activity-logs?${query.toString()}`);
+    return apiClient.get<ActivityLogListResponse>(
+      `/api/v1/admin/activity-logs?${query.toString()}`,
+    );
   },
 };

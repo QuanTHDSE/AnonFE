@@ -95,7 +95,8 @@ export function WelcomeModal() {
                 Chào mừng đến với Anonwork! 🚀
               </h2>
               <p className="text-white/90 text-sm sm:text-base font-medium mt-2 leading-relaxed">
-                Nền tảng chia sẻ, hỏi đáp và thảo luận ẩn danh dành cho cộng đồng sinh viên & giới trẻ.
+                Nền tảng chia sẻ, hỏi đáp và thảo luận ẩn danh dành cho cộng đồng sinh viên & giới
+                trẻ.
               </p>
             </div>
 
@@ -108,7 +109,8 @@ export function WelcomeModal() {
                 <div>
                   <h4 className="text-sm font-bold text-gray-900">Chia sẻ Ẩn danh An toàn</h4>
                   <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                    Tự do đặt câu hỏi, chia sẻ trải nghiệm và bày tỏ quan điểm cá nhân mà không ngại lộ danh tính.
+                    Tự do đặt câu hỏi, chia sẻ trải nghiệm và bày tỏ quan điểm cá nhân mà không ngại
+                    lộ danh tính.
                   </p>
                 </div>
               </div>
@@ -120,7 +122,8 @@ export function WelcomeModal() {
                 <div>
                   <h4 className="text-sm font-bold text-gray-900">Thảo luận & Đánh giá bài viết</h4>
                   <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                    Tương tác chất lượng với hệ thống upvote, bình luận và xếp hạng bài viết theo cộng đồng.
+                    Tương tác chất lượng với hệ thống upvote, bình luận và xếp hạng bài viết theo
+                    cộng đồng.
                   </p>
                 </div>
               </div>
@@ -130,9 +133,12 @@ export function WelcomeModal() {
                   <Crown size={22} strokeWidth={2.5} />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-gray-900">Bảng Xếp Hạng & Quyền lợi Premium</h4>
+                  <h4 className="text-sm font-bold text-gray-900">
+                    Bảng Xếp Hạng & Quyền lợi Premium
+                  </h4>
                   <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                    Tích lũy điểm đóng góp hàng tháng, vinh danh Top Contributors và mở khóa tính năng đặc quyền.
+                    Tích lũy điểm đóng góp hàng tháng, vinh danh Top Contributors và mở khóa tính
+                    năng đặc quyền.
                   </p>
                 </div>
               </div>

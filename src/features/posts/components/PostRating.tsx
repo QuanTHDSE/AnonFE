@@ -101,9 +101,7 @@ export const PostRating: React.FC<PostRatingProps> = ({
         type="button"
         onClick={handleOpenPicker}
         className={`flex items-center gap-1.5 rounded-full transition-all group ${
-          myStars
-            ? "text-amber-500 hover:text-amber-600"
-            : "text-gray-500 hover:text-amber-500"
+          myStars ? "text-amber-500 hover:text-amber-600" : "text-gray-500 hover:text-amber-500"
         }`}
         title={myStars ? `Đánh giá của bạn: ${myStars}★ (Bấm để thay đổi)` : "Đánh giá bài viết"}
       >
@@ -115,12 +113,8 @@ export const PostRating: React.FC<PostRatingProps> = ({
               : "group-hover:text-amber-400 group-hover:fill-amber-400/20"
           }`}
         />
-        <span className="text-sm font-semibold">
-          {formattedAvg}
-        </span>
-        {showCount && (
-          <span className="text-xs text-gray-400 font-medium">({ratingsCount})</span>
-        )}
+        <span className="text-sm font-semibold">{formattedAvg}</span>
+        {showCount && <span className="text-xs text-gray-400 font-medium">({ratingsCount})</span>}
         {myStars && (
           <span className="ml-0.5 text-[10px] font-bold px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-200">
             {myStars}★
@@ -187,8 +181,8 @@ export const PostRating: React.FC<PostRatingProps> = ({
                   {hoveredStar
                     ? `${hoveredStar}★ — ${RATING_LABELS[hoveredStar]}`
                     : myStars
-                    ? `Đã chọn: ${myStars}★ (Nhấp lại để xoá)`
-                    : "Chọn mức sao để đánh giá"}
+                      ? `Đã chọn: ${myStars}★ (Nhấp lại để xoá)`
+                      : "Chọn mức sao để đánh giá"}
                 </div>
               </>
             )}

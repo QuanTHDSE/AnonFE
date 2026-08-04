@@ -106,13 +106,16 @@ export const searchService = {
   /**
    * Search both posts and users in a single request.
    */
-  async searchAll(query: string, limit = 5): Promise<{ posts: FeedPostItem[]; users: SearchUserItem[]; query: string }> {
+  async searchAll(
+    query: string,
+    limit = 5,
+  ): Promise<{ posts: FeedPostItem[]; users: SearchUserItem[]; query: string }> {
     if (!query || !query.trim()) {
       return { posts: [], users: [], query: "" };
     }
 
     const res = await apiClient.get<SearchAllResponse>(
-      `/api/v1/search?q=${encodeURIComponent(query.trim())}&limit=${limit}`
+      `/api/v1/search?q=${encodeURIComponent(query.trim())}&limit=${limit}`,
     );
 
     const mappedPosts: FeedPostItem[] = (res.posts?.posts ?? []).map((p) => ({
@@ -141,11 +144,11 @@ export const searchService = {
       tags: p.tags ?? [],
       subject: p.subjectId
         ? {
-          id: p.subjectId,
-          name: p.subjectName ?? "",
-          slug: "",
-          iconEmoji: "📚",
-        }
+            id: p.subjectId,
+            name: p.subjectName ?? "",
+            slug: "",
+            iconEmoji: "📚",
+          }
         : null,
       likesCount: p.upvotes ?? 0,
       commentsCount: p.commentsCount ?? 0,
@@ -184,7 +187,13 @@ export const searchService = {
    */
   async searchPosts(
     query: string,
-    params?: { subjectId?: string; tag?: string; sortBy?: string; page?: number; pageSize?: number }
+    params?: {
+      subjectId?: string;
+      tag?: string;
+      sortBy?: string;
+      page?: number;
+      pageSize?: number;
+    },
   ): Promise<SearchPostsResult> {
     const qParams = new URLSearchParams();
     if (query) qParams.set("q", query.trim());
@@ -228,11 +237,11 @@ export const searchService = {
       tags: p.tags ?? [],
       subject: p.subjectId
         ? {
-          id: p.subjectId,
-          name: p.subjectName ?? "",
-          slug: "",
-          iconEmoji: "📚",
-        }
+            id: p.subjectId,
+            name: p.subjectName ?? "",
+            slug: "",
+            iconEmoji: "📚",
+          }
         : null,
       likesCount: p.upvotes ?? 0,
       commentsCount: p.commentsCount ?? 0,

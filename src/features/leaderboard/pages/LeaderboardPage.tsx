@@ -100,7 +100,9 @@ const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
       {/* Stats */}
       <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 md:gap-5 w-full md:w-auto mt-4 md:mt-0 px-4 md:px-0 border-t border-gray-100 md:border-t-0 pt-4 md:pt-0 shrink-0">
         <div className="flex flex-col items-center">
-          <span className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Likes</span>
+          <span className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">
+            Likes
+          </span>
           <div className="flex items-center justify-center gap-1.5 h-7">
             <Heart size={18} className="text-rose-500 fill-rose-500 shrink-0" />
             <span className="font-bold text-lg text-gray-900 leading-none">
@@ -110,7 +112,9 @@ const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
         </div>
 
         <div className="flex flex-col items-center">
-          <span className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Comments</span>
+          <span className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">
+            Comments
+          </span>
           <div className="flex items-center justify-center gap-1.5 h-7">
             <MessageSquare size={18} className="text-blue-500 shrink-0" />
             <span className="font-bold text-lg text-gray-900 leading-none">
@@ -120,7 +124,9 @@ const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
         </div>
 
         <div className="flex flex-col items-center">
-          <span className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Rating</span>
+          <span className="text-[11px] font-bold text-gray-400 mb-1 uppercase tracking-wider">
+            Rating
+          </span>
           <div className="flex items-center justify-center gap-1.5 h-7">
             <Star size={18} className="text-amber-400 fill-amber-400 shrink-0" />
             <span className="font-bold text-lg text-gray-900 leading-none">

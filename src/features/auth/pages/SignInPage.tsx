@@ -7,6 +7,59 @@ import { GoogleLogin } from "@react-oauth/google";
 import { authService } from "@/services/authService";
 import { useAuth } from "@/features/auth/AuthContext";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function getLoginErrorMessage(error: unknown): string {
+  let message = "";
+
+  if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof error === "string") {
+    message = error;
+  } else if (error && typeof error === "object") {
+    const errorBody = error as { message?: unknown; error?: unknown };
+    if (typeof errorBody.message === "string") {
+      message = errorBody.message;
+    } else if (typeof errorBody.error === "string") {
+      message = errorBody.error;
+    } else if (errorBody.error && typeof errorBody.error === "object") {
+      const nestedMessage = (errorBody.error as { message?: unknown }).message;
+      if (typeof nestedMessage === "string") message = nestedMessage;
+    }
+  }
+
+  const normalizedMessage = message.trim().toLowerCase();
+
+  if (
+    !normalizedMessage ||
+    normalizedMessage === "[object object]" ||
+    normalizedMessage.includes("invalid email or password") ||
+    normalizedMessage.includes("incorrect email or password") ||
+    normalizedMessage.includes("unauthorized") ||
+    normalizedMessage === "http 401"
+  ) {
+    return "Email hoặc mật khẩu không chính xác.";
+  }
+
+  if (normalizedMessage.includes("not verified") || normalizedMessage.includes("verify email")) {
+    return "Email chưa được xác minh. Vui lòng kiểm tra hộp thư của bạn.";
+  }
+
+  if (normalizedMessage.includes("locked") || normalizedMessage.includes("disabled")) {
+    return "Tài khoản đang bị khóa hoặc đã bị vô hiệu hóa.";
+  }
+
+  if (
+    normalizedMessage.includes("failed to fetch") ||
+    normalizedMessage.includes("networkerror") ||
+    normalizedMessage.includes("load failed")
+  ) {
+    return "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.";
+  }
+
+  return message;
+}
+
 export function SignInView() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,12 +95,29 @@ export function SignInView() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail) {
+      setError("Vui lòng nhập địa chỉ email.");
+      return;
+    }
+
+    if (!EMAIL_PATTERN.test(normalizedEmail)) {
+      setError("Địa chỉ email không đúng định dạng.");
+      return;
+    }
+
+    if (!password) {
+      setError("Vui lòng nhập mật khẩu.");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await login({ email, password });
+      await login({ email: normalizedEmail, password });
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Email hoặc mật khẩu không chính xác.");
+      setError(getLoginErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +153,7 @@ export function SignInView() {
           </div>
 
           {/* Form */}
-          <form className="space-y-6" onSubmit={handleLogin}>
+          <form className="space-y-6" onSubmit={handleLogin} noValidate>
             {justResetPassword && !error && (
               <div className="p-3 bg-green-50 text-green-600 rounded-xl text-sm font-bold text-center">
                 Đặt lại mật khẩu thành công! Hãy đăng nhập.
@@ -118,7 +188,10 @@ export function SignInView() {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError("");
+                  }}
                   placeholder="name@example.com"
                   required
                   className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
@@ -145,7 +218,10 @@ export function SignInView() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError("");
+                  }}
                   placeholder="••••••••"
                   required
                   className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"

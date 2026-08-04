@@ -1,13 +1,5 @@
 import { Link } from "react-router";
-import {
-  Cookie,
-  CreditCard,
-  EyeOff,
-  Lock,
-  Mail,
-  ShieldCheck,
-  UserCheck,
-} from "lucide-react";
+import { Cookie, CreditCard, EyeOff, Lock, Mail, ShieldCheck, UserCheck } from "lucide-react";
 
 const sections = [
   {
@@ -56,7 +48,8 @@ export function PrivacyPage() {
             Chính sách quyền riêng tư
           </h1>
           <p className="mt-3 text-sm text-gray-500 font-medium">
-            Cập nhật lần cuối: 24/07/2026. Chúng tôi tôn trọng và cam kết bảo vệ dữ liệu cá nhân của bạn.
+            Cập nhật lần cuối: 24/07/2026. Chúng tôi tôn trọng và cam kết bảo vệ dữ liệu cá nhân của
+            bạn.
           </p>
         </div>
 
@@ -67,7 +60,8 @@ export function PrivacyPage() {
             Cam kết Ẩn danh & An toàn dữ liệu
           </p>
           <p className="text-orange-800/90 font-medium text-xs sm:text-sm leading-relaxed">
-            Chúng tôi đảm bảo khi bạn chọn chế độ Đăng bài / Bình luận Ẩn danh, tên thật và thông tin cá nhân của bạn luôn được bảo vệ hoàn toàn khỏi cộng đồng người dùng.
+            Chúng tôi đảm bảo khi bạn chọn chế độ Đăng bài / Bình luận Ẩn danh, tên thật và thông
+            tin cá nhân của bạn luôn được bảo vệ hoàn toàn khỏi cộng đồng người dùng.
           </p>
         </div>
 
@@ -99,7 +93,9 @@ export function PrivacyPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900">Bạn có câu hỏi về quyền riêng tư?</p>
-              <p className="text-xs text-gray-500 font-medium">Liên hệ bộ phận hỗ trợ trong phần Hồ sơ tài khoản</p>
+              <p className="text-xs text-gray-500 font-medium">
+                Liên hệ bộ phận hỗ trợ trong phần Hồ sơ tài khoản
+              </p>
             </div>
           </div>
           <Link
