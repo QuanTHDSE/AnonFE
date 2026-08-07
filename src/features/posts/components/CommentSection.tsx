@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { commentService, type Comment } from "@/services/commentService";
+import { UserPremiumBadge } from "@/shared/components/UserPremiumBadge";
 import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import { Link, useNavigate } from "react-router";
 
@@ -327,6 +328,11 @@ function CommentItem({
             ) : (
               <span className="text-sm font-bold text-gray-500">{authorName}</span>
             )}
+            <UserPremiumBadge
+              userId={comment.author?.id}
+              username={comment.author?.name}
+              isAnonymous={comment.isAnonymous}
+            />
             <span className="text-xs text-gray-400 font-medium">
               {formatRelativeTime(comment.createdAt)}
             </span>

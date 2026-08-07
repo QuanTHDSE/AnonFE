@@ -5,6 +5,8 @@ import { ExternalLink, Loader2, Pencil, Search, Shield, Trash2 } from "lucide-re
 import { userService, type UserProfile, type UpdateUserPayload } from "@/services/userService";
 import { roleService, type Role } from "@/services/roleService";
 import { UserRoleDialog } from "@/features/admin/pages/AdminRolesPage";
+import { UserPremiumBadge } from "@/shared/components/UserPremiumBadge";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +45,7 @@ function Avatar({ user }: { user: UserProfile }) {
   const initials = user.username?.slice(0, 2).toUpperCase() ?? "??";
   return user.avatarUrl ? (
     <img
-      src={user.avatarUrl}
+      src={toAbsoluteMediaUrl(user.avatarUrl) ?? undefined}
       alt={user.username}
       className="w-8 h-8 rounded-full object-cover border border-gray-100"
     />
@@ -250,6 +252,7 @@ export function AdminUsersView() {
                       <div className="flex items-center gap-2.5">
                         <Avatar user={user} />
                         <span className="font-semibold text-gray-900 text-sm">{user.username}</span>
+                        <UserPremiumBadge userId={user.id} username={user.username} />
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 font-medium">

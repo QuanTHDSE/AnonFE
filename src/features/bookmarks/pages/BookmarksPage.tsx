@@ -7,6 +7,7 @@ import { bookmarkService, type BookmarkPost } from "@/services/bookmarkService";
 import { commentService } from "@/services/commentService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
+import { UserPremiumBadge } from "@/shared/components/UserPremiumBadge";
 import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 
 function formatDate(dateStr: string): string {
@@ -79,7 +80,14 @@ function BookmarkCard({
             )}
           </div>
           <div>
-            <h3 className="font-bold text-sm text-gray-900">{displayName}</h3>
+            <div className="flex items-center gap-1">
+              <h3 className="font-bold text-sm text-gray-900">{displayName}</h3>
+              <UserPremiumBadge
+                userId={item.author?.id}
+                username={item.author?.name}
+                isAnonymous={item.isAnonymous}
+              />
+            </div>
             <p className="text-xs text-gray-400">Lưu {formatDate(item.createdAt)}</p>
           </div>
         </div>

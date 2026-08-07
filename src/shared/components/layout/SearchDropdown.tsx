@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import type { SearchUserItem } from "@/services/searchService";
 import type { FeedPostItem } from "@/types";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
+import { UserPremiumBadge } from "@/shared/components/UserPremiumBadge";
 
 interface SearchDropdownProps {
   isOpen: boolean;
@@ -129,9 +130,16 @@ export function SearchDropdown({
                             )}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#F15B29] transition-colors truncate">
-                              {u.username}
-                            </h4>
+                            <div className="flex items-center gap-1">
+                              <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#F15B29] transition-colors truncate">
+                                {u.username}
+                              </h4>
+                              <UserPremiumBadge
+                                userId={u.id}
+                                username={u.username}
+                                isPremium={u.hasActiveSubscription}
+                              />
+                            </div>
                             <p className="text-xs text-gray-400 truncate">
                               @{u.anonAlias} • {u.followerCount} người theo dõi
                             </p>

@@ -25,6 +25,7 @@ import { CommentSection } from "@/features/posts/components/CommentSection";
 import { PostRating } from "@/features/posts/components/PostRating";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
+import { UserPremiumBadge } from "@/shared/components/UserPremiumBadge";
 import { usePostShare } from "@/shared/hooks/usePostShare";
 import type { FeedPostItem } from "@/types";
 
@@ -246,9 +247,16 @@ export function PostDetailView() {
                         )}
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900">
-                          {post.isAnonymous ? "Ẩn danh" : (post.author?.name ?? "Ẩn danh")}
-                        </p>
+                        <div className="flex items-center gap-1">
+                          <p className="font-bold text-gray-900">
+                            {post.isAnonymous ? "Ẩn danh" : (post.author?.name ?? "Ẩn danh")}
+                          </p>
+                          <UserPremiumBadge
+                            userId={post.author?.id ?? post.authorId}
+                            username={post.author?.name}
+                            isAnonymous={post.isAnonymous}
+                          />
+                        </div>
                         <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mt-0.5">
                           <Calendar size={12} />
                           {formatDate(post.createdAt)}

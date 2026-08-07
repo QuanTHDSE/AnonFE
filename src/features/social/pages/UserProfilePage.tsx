@@ -15,12 +15,12 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { followService, type FollowStats } from "@/services/followService";
 import { postService } from "@/services/postService";
 import { commentService } from "@/services/commentService";
-import { userService, type UserProfile } from "@/services/userService";
-import { fetchPremiumStatusSafe } from "@/services/subscriptionService";
+import { getUserPremium, userService, type UserProfile } from "@/services/userService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
 import { PostRating } from "@/features/posts/components/PostRating";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
 import type { FeedPostItem } from "@/types";
 
 function formatDate(dateStr: string): string {
@@ -179,12 +179,7 @@ export function UserProfileView() {
         // posts — only their public (non-anonymous) ones.
         setPosts(postsRes.posts.filter((p) => p.authorId === profileId && !p.isAnonymous));
         setFollowStats(stats);
-        // Use isPremium from user profile API if backend provides it, otherwise try subscription check
-        if (prof.isPremium) {
-          setIsProfilePremium(true);
-        } else {
-          void fetchPremiumStatusSafe(profileId).then(setIsProfilePremium);
-        }
+        void getUserPremium(profileId, prof.username).then(setIsProfilePremium);
       })
       .catch((err: unknown) =>
         setError(err instanceof Error ? err.message : "Không tìm thấy người dùng."),
@@ -271,7 +266,7 @@ export function UserProfileView() {
               <div className="shrink-0">
                 {profile.avatarUrl ? (
                   <img
-                    src={profile.avatarUrl}
+                    src={toAbsoluteMediaUrl(profile.avatarUrl) ?? undefined}
                     alt={profile.username}
                     className="w-24 h-24 rounded-full object-cover border-4 border-orange-100"
                   />

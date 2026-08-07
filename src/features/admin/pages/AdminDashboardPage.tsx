@@ -5,6 +5,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
 import type { FeedPostItem } from "@/types";
 import { PostsActivityChart } from "../components/PostsActivityChart";
+import { PremiumAnalyticsPanel } from "../components/PremiumAnalyticsPanel";
 import { StatsCard } from "../components/StatsCard";
 
 function buildChartData(posts: FeedPostItem[]): { date: string; posts: number }[] {
@@ -103,6 +104,8 @@ export function AdminDashboardView() {
           <PostsActivityChart data={chartData} />
         )}
       </div>
+
+      <PremiumAnalyticsPanel />
     </div>
   );
 }

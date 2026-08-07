@@ -1,5 +1,7 @@
 import { apiClient } from "@/services/apiClient";
+import { searchService } from "@/services/searchService";
 import { fetchPremiumStatusSafe } from "@/services/subscriptionService";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
 
 export interface UserProfile {
   id: string;
@@ -138,27 +140,56 @@ async function fetchUserCached(id: string): Promise<UserProfile | null> {
 
 export async function getUserAvatar(id: string): Promise<string | null> {
   const u = await fetchUserCached(id);
-  return u?.avatarUrl ?? null;
+  return toAbsoluteMediaUrl(u?.avatarUrl);
 }
 
-// Premium status is resolved best-effort from two sources: the user profile's
-// `isPremium` flag (if the backend includes it), falling back to the user's
-// subscription list. Cached so each author is checked at most once per session.
-const premiumCache = new Map<string, boolean>();
+// Public profile responses currently omit premium status, while the public user
+// search response exposes `hasActiveSubscription`. Prefer that public source so
+// badges also work when viewing other users; use the protected subscription
+// endpoint only when public resolution is unavailable.
+const PREMIUM_CACHE_TTL_MS = 5 * 60 * 1000;
+const premiumCache = new Map<string, { value: boolean; expiresAt: number }>();
 const premiumInflight = new Map<string, Promise<boolean>>();
 
-export async function getUserPremium(id: string): Promise<boolean> {
+export async function getUserPremium(id: string, username?: string | null): Promise<boolean> {
   if (!id) return false;
-  if (premiumCache.has(id)) return premiumCache.get(id) ?? false;
+  const cached = premiumCache.get(id);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
   const existing = premiumInflight.get(id);
   if (existing) return existing;
+
   const promise = (async () => {
-    const u = await fetchUserCached(id);
-    let premium = u?.isPremium === true;
-    if (!premium) premium = await fetchPremiumStatusSafe(id);
-    premiumCache.set(id, premium);
-    premiumInflight.delete(id);
-    return premium;
+    try {
+      const profile = await fetchUserCached(id);
+      let premium = profile?.isPremium === true;
+      let publicStatusResolved = false;
+      const searchName = username?.trim() || profile?.username?.trim();
+
+      if (!premium && searchName) {
+        try {
+          const result = await searchService.searchUsers(searchName, 1, 20);
+          const exactUser = result.users.find((user) => user.id === id);
+          if (exactUser) {
+            premium = exactUser.hasActiveSubscription;
+            publicStatusResolved = true;
+          }
+        } catch {
+          // Fall through to the subscription endpoint when public search fails.
+        }
+      }
+
+      if (!premium && !publicStatusResolved) {
+        premium = await fetchPremiumStatusSafe(id);
+      }
+
+      premiumCache.set(id, {
+        value: premium,
+        expiresAt: Date.now() + PREMIUM_CACHE_TTL_MS,
+      });
+      return premium;
+    } finally {
+      premiumInflight.delete(id);
+    }
   })();
   premiumInflight.set(id, promise);
   return promise;

@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { subscriptionService, type UserSubscription } from "@/services/subscriptionService";
 import { userService, type UserProfile } from "@/services/userService";
+import { UserPremiumBadge } from "@/shared/components/UserPremiumBadge";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
 import {
   Dialog,
   DialogContent,
@@ -71,13 +73,24 @@ function UserCard({
           : "bg-white border-gray-100 hover:border-gray-200"
       }`}
     >
-      <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-        <span className="font-bold text-[#F15B29] text-sm">
-          {(user.username ?? user.email).slice(0, 2).toUpperCase()}
-        </span>
+      <div className="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0 overflow-hidden">
+        {user.avatarUrl ? (
+          <img
+            src={toAbsoluteMediaUrl(user.avatarUrl) ?? undefined}
+            alt={user.username}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="font-bold text-[#F15B29] text-sm">
+            {(user.username ?? user.email).slice(0, 2).toUpperCase()}
+          </span>
+        )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="font-bold text-gray-900 text-sm truncate">{user.username}</p>
+        <div className="flex items-center gap-1">
+          <p className="font-bold text-gray-900 text-sm truncate">{user.username}</p>
+          <UserPremiumBadge userId={user.id} username={user.username} />
+        </div>
         <p className="text-xs text-gray-400 truncate">{user.email}</p>
       </div>
       {isSelected && <BadgeCheck size={16} className="text-[#F15B29] shrink-0" />}

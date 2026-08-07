@@ -27,6 +27,7 @@ import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback"
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 import { PremiumBadge } from "@/shared/components/PremiumBadge";
 import { SubscriptionPeekDialog } from "@/shared/components/SubscriptionPeekDialog";
+import { UserPremiumBadge } from "@/shared/components/UserPremiumBadge";
 import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import { getUserPremium, userService, type TopContributor } from "@/services/userService";
 import { PostRating } from "@/features/posts/components/PostRating";
@@ -34,6 +35,7 @@ import type { FeedPostItem, Subject } from "@/types";
 import { searchService, type SearchUserItem } from "@/services/searchService";
 import { SearchDropdown } from "@/shared/components/layout/SearchDropdown";
 import { usePostShare } from "@/shared/hooks/usePostShare";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
 
 function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -739,9 +741,16 @@ export function HomeView() {
                                 )}
                               </div>
                               <div className="min-w-0">
-                                <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#F15B29] transition-colors truncate">
-                                  {u.username}
-                                </h4>
+                                <div className="flex items-center gap-1">
+                                  <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#F15B29] transition-colors truncate">
+                                    {u.username}
+                                  </h4>
+                                  <UserPremiumBadge
+                                    userId={u.id}
+                                    username={u.username}
+                                    isPremium={u.hasActiveSubscription}
+                                  />
+                                </div>
                                 <p className="text-xs text-gray-400 truncate">@{u.anonAlias}</p>
                                 <p className="text-[11px] text-gray-500 font-medium mt-0.5">
                                   {u.followerCount} người theo dõi
@@ -875,7 +884,7 @@ export function HomeView() {
                           <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden border border-gray-100 flex items-center justify-center font-bold text-gray-600 text-sm">
                             {c.avatarUrl ? (
                               <img
-                                src={c.avatarUrl}
+                                src={toAbsoluteMediaUrl(c.avatarUrl) ?? undefined}
                                 alt={c.displayName}
                                 className="w-full h-full object-cover"
                               />
@@ -894,12 +903,19 @@ export function HomeView() {
 
                         {/* User Info */}
                         <div className="min-w-0">
-                          <Link
-                            to={profileUrl}
-                            className="font-bold text-sm text-gray-900 hover:text-[#F15B29] transition-colors truncate block"
-                          >
-                            {c.displayName}
-                          </Link>
+                          <div className="flex items-center gap-1">
+                            <Link
+                              to={profileUrl}
+                              className="font-bold text-sm text-gray-900 hover:text-[#F15B29] transition-colors truncate block"
+                            >
+                              {c.displayName}
+                            </Link>
+                            <UserPremiumBadge
+                              userId={c.userId}
+                              username={c.username}
+                              isAnonymous={c.isAnonymous}
+                            />
+                          </div>
                           <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mt-0.5">
                             <span>{c.postsCount} bài viết</span>
                             <span>·</span>

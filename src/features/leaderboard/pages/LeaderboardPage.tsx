@@ -18,11 +18,14 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { filterLeaderboardPosts, leaderboardService } from "@/services/leaderboardService";
 import { ImageWithFallback } from "@/shared/components/images/ImageWithFallback";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
+import { UserPremiumBadge } from "@/shared/components/UserPremiumBadge";
+import { usePostAvatar } from "@/shared/hooks/usePostAvatar";
 import type { LeaderboardPost } from "@/types";
 
 const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
   const navigate = useNavigate();
   const isTop3 = post.rank <= 3;
+  const authorAvatar = usePostAvatar(post.author.id, post.isAnonymous ?? false, post.author.avatar);
 
   const getRankColors = (rank: number) => {
     switch (rank) {
@@ -81,13 +84,24 @@ const LeaderboardCard = ({ post }: { post: LeaderboardPost }) => {
 
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-full overflow-hidden bg-orange-100">
-              <ImageWithFallback
-                src={post.author.avatar}
-                alt={post.author.name}
-                className="w-full h-full object-cover"
-              />
+              {authorAvatar ? (
+                <ImageWithFallback
+                  src={authorAvatar}
+                  alt={post.author.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-[#F15B29]">
+                  <User size={14} />
+                </div>
+              )}
             </div>
             <span className="text-sm font-medium text-gray-600">{post.author.name}</span>
+            <UserPremiumBadge
+              userId={post.author.id}
+              username={post.author.name}
+              isAnonymous={post.isAnonymous}
+            />
             <span className="text-gray-300 mx-1">•</span>
             <span className="text-xs text-gray-500 flex items-center gap-1">
               <Clock size={12} />

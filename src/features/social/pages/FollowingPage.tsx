@@ -18,6 +18,8 @@ import { useAuth } from "@/features/auth/AuthContext";
 import { followService, type FollowUserItem } from "@/services/followService";
 import { userService, type TopContributor } from "@/services/userService";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
+import { UserPremiumBadge } from "@/shared/components/UserPremiumBadge";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
 
 type TabType = "top-contributors" | "following" | "followers";
 
@@ -261,7 +263,7 @@ export function FollowingView() {
                         >
                           {c.avatarUrl ? (
                             <img
-                              src={c.avatarUrl}
+                              src={toAbsoluteMediaUrl(c.avatarUrl) ?? undefined}
                               alt={c.displayName}
                               className="w-full h-full object-cover"
                             />
@@ -275,12 +277,20 @@ export function FollowingView() {
                         </div>
 
                         {/* Name & Info */}
-                        <h3
-                          className="text-lg font-bold text-gray-900 cursor-pointer hover:text-[#F15B29] transition-colors mb-1 line-clamp-1"
-                          onClick={() => navigate(isOwn ? "/profile" : `/users/${c.userId}`)}
-                        >
-                          {c.displayName}
-                        </h3>
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <h3
+                            className="text-lg font-bold text-gray-900 cursor-pointer hover:text-[#F15B29] transition-colors line-clamp-1"
+                            onClick={() => navigate(isOwn ? "/profile" : `/users/${c.userId}`)}
+                          >
+                            {c.displayName}
+                          </h3>
+                          <UserPremiumBadge
+                            userId={c.userId}
+                            username={c.username}
+                            isAnonymous={c.isAnonymous}
+                            size={18}
+                          />
+                        </div>
 
                         {/* Stats Badges */}
                         <div className="flex items-center gap-2 mb-4">
@@ -414,12 +424,15 @@ export function FollowingView() {
                           )}
                         </div>
 
-                        <h3
-                          className="text-lg font-bold text-gray-900 cursor-pointer hover:text-[#F15B29] transition-colors mb-1"
-                          onClick={() => navigate(`/users/${u.id}`)}
-                        >
-                          {u.username}
-                        </h3>
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <h3
+                            className="text-lg font-bold text-gray-900 cursor-pointer hover:text-[#F15B29] transition-colors"
+                            onClick={() => navigate(`/users/${u.id}`)}
+                          >
+                            {u.username}
+                          </h3>
+                          <UserPremiumBadge userId={u.id} username={u.username} size={18} />
+                        </div>
                         <p className="text-sm text-gray-400 font-medium mb-5">{u.email}</p>
 
                         <div className="w-full flex gap-3">
@@ -518,12 +531,15 @@ export function FollowingView() {
                           )}
                         </div>
 
-                        <h3
-                          className="text-lg font-bold text-gray-900 cursor-pointer hover:text-[#F15B29] transition-colors mb-1"
-                          onClick={() => navigate(isOwn ? "/profile" : `/users/${u.id}`)}
-                        >
-                          {u.username}
-                        </h3>
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <h3
+                            className="text-lg font-bold text-gray-900 cursor-pointer hover:text-[#F15B29] transition-colors"
+                            onClick={() => navigate(isOwn ? "/profile" : `/users/${u.id}`)}
+                          >
+                            {u.username}
+                          </h3>
+                          <UserPremiumBadge userId={u.id} username={u.username} size={18} />
+                        </div>
                         <p className="text-sm text-gray-400 font-medium mb-5">{u.email}</p>
 
                         <div className="w-full flex gap-3">

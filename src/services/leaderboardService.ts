@@ -33,7 +33,9 @@ function toLeaderboardPost(post: FeedPostItem, index: number): LeaderboardPost {
     rank: index + 1,
     title: post.title,
     image: post.images?.[0] ?? "",
+    isAnonymous: post.isAnonymous,
     author: {
+      id: post.author?.id ?? post.authorId,
       name: post.isAnonymous
         ? (post.author?.name ?? "Ẩn danh")
         : (post.author?.name ?? "Người dùng"),

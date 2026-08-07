@@ -33,7 +33,9 @@ export interface LeaderboardPost {
   rank: number;
   title: string;
   image: string;
+  isAnonymous?: boolean;
   author: {
+    id?: string;
     name: string;
     avatar: string;
   };

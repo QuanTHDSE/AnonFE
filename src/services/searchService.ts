@@ -1,4 +1,5 @@
 import { apiClient } from "@/services/apiClient";
+import { toAbsoluteMediaUrl } from "@/shared/utils/mediaUrl";
 import type { FeedPostItem } from "@/types";
 
 export interface SearchUserItem {
@@ -127,7 +128,7 @@ export const searchService = {
       author: {
         id: p.authorId,
         name: p.authorName ?? "Ẩn danh",
-        avatar: p.authorAvatarUrl ?? undefined,
+        avatar: toAbsoluteMediaUrl(p.authorAvatarUrl) ?? undefined,
       },
       images: (p.media ?? [])
         .filter((m) => m.mediaType === "Image" || m.contentType?.startsWith("image/"))
@@ -164,7 +165,7 @@ export const searchService = {
       username: u.username,
       email: u.email,
       avatarKey: u.avatarKey,
-      avatarUrl: u.avatarUrl,
+      avatarUrl: toAbsoluteMediaUrl(u.avatarUrl),
       bio: u.bio,
       anonAlias: u.anonAlias,
       isAnonDefault: u.isAnonDefault,
@@ -220,7 +221,7 @@ export const searchService = {
       author: {
         id: p.authorId,
         name: p.authorName ?? "Ẩn danh",
-        avatar: p.authorAvatarUrl ?? undefined,
+        avatar: toAbsoluteMediaUrl(p.authorAvatarUrl) ?? undefined,
       },
       images: (p.media ?? [])
         .filter((m) => m.mediaType === "Image" || m.contentType?.startsWith("image/"))
@@ -279,7 +280,10 @@ export const searchService = {
     }>(`/api/v1/search/users?${qParams.toString()}`);
 
     return {
-      users: res.users ?? [],
+      users: (res.users ?? []).map((user) => ({
+        ...user,
+        avatarUrl: toAbsoluteMediaUrl(user.avatarUrl),
+      })),
       total: res.total,
       page: res.page,
       pageSize: res.pageSize,
