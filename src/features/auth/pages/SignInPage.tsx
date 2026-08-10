@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import Vector from "@/imports/Vector";
 import { useNavigate, useLocation } from "react-router";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { authService } from "@/services/authService";
+import { getErrorMessage } from "@/services/apiClient";
 import { useAuth } from "@/features/auth/AuthContext";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -70,6 +71,7 @@ export function SignInView() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? "/";
   const justRegistered = (location.state as { registered?: boolean })?.registered;
@@ -80,6 +82,7 @@ export function SignInView() {
 
   const handleGoogleSuccess = async (credential: string) => {
     setGoogleError("");
+    setIsGoogleLoading(true);
     try {
       await authService.loginWithGoogle(
         credential,
@@ -88,7 +91,8 @@ export function SignInView() {
       refreshUser();
       navigate(from, { replace: true });
     } catch (err) {
-      setGoogleError(err instanceof Error ? err.message : "Đăng nhập Google thất bại.");
+      setGoogleError(getErrorMessage(err, "Đăng nhập Google thất bại."));
+      setIsGoogleLoading(false);
     }
   };
 
@@ -194,7 +198,8 @@ export function SignInView() {
                   }}
                   placeholder="name@example.com"
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
+                  disabled={isLoading || isGoogleLoading}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium disabled:opacity-50"
                 />
               </div>
             </div>
@@ -224,7 +229,8 @@ export function SignInView() {
                   }}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
+                  disabled={isLoading || isGoogleLoading}
+                  className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium disabled:opacity-50"
                 />
                 <button
                   type="button"
@@ -238,7 +244,7 @@ export function SignInView() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isGoogleLoading}
               className="w-full py-4 bg-[#F15B29] text-white font-extrabold rounded-2xl hover:bg-[#d94a1d] transition-all shadow-lg shadow-orange-200 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
@@ -262,17 +268,24 @@ export function SignInView() {
             {googleError && (
               <p className="text-red-500 text-sm font-bold text-center">{googleError}</p>
             )}
-            <GoogleLogin
-              onSuccess={(res) => {
-                if (res.credential) void handleGoogleSuccess(res.credential);
-              }}
-              onError={() => setGoogleError("Đăng nhập Google thất bại.")}
-              theme="outline"
-              size="large"
-              text="signin_with"
-              shape="rectangular"
-              width="368"
-            />
+            {isGoogleLoading ? (
+              <div className="flex items-center justify-center gap-3 py-3.5 px-6 bg-orange-50 border border-orange-200 text-[#F15B29] font-bold rounded-2xl w-full max-w-[368px]">
+                <Loader2 size={20} className="animate-spin" />
+                <span>Đang đăng nhập bằng Google...</span>
+              </div>
+            ) : (
+              <GoogleLogin
+                onSuccess={(res) => {
+                  if (res.credential) void handleGoogleSuccess(res.credential);
+                }}
+                onError={() => setGoogleError("Đăng nhập Google thất bại.")}
+                theme="outline"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+                width="368"
+              />
+            )}
           </div>
 
           <p className="mt-10 text-center text-gray-500 font-medium">

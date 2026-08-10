@@ -19,6 +19,7 @@ import {
 import { Link } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
+import { getErrorMessage } from "@/services/apiClient";
 import type { Subject } from "@/types";
 
 export function CreatePostView() {
@@ -35,6 +36,8 @@ export function CreatePostView() {
   const [content, setContent] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [isSubjectsLoading, setIsSubjectsLoading] = useState(true);
+  const [subjectError, setSubjectError] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -47,8 +50,18 @@ export function CreatePostView() {
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
+  const loadSubjects = () => {
+    setIsSubjectsLoading(true);
+    setSubjectError(false);
+    postService
+      .getSubjects({ pageSize: 100 })
+      .then((res) => setSubjects(res.subjects))
+      .catch(() => setSubjectError(true))
+      .finally(() => setIsSubjectsLoading(false));
+  };
+
   useEffect(() => {
-    void postService.getSubjects({ pageSize: 100 }).then((res) => setSubjects(res.subjects));
+    loadSubjects();
   }, []);
 
   const handleAddTag = () => {
@@ -138,7 +151,7 @@ export function CreatePostView() {
       setTimeout(() => navigate("/"), 1500);
     } catch (err) {
       setSubmitStatus("error");
-      setErrorMessage(err instanceof Error ? err.message : "Đăng bài thất bại. Vui lòng thử lại.");
+      setErrorMessage(getErrorMessage(err, "Đăng bài thất bại. Vui lòng thử lại."));
     } finally {
       setIsLoading(false);
     }
@@ -388,11 +401,31 @@ export function CreatePostView() {
                   Chuyên ngành <span className="text-red-400">*</span>
                 </label>
                 {subjects.length === 0 ? (
-                  <div className="flex gap-2">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-10 w-28 bg-gray-100 rounded-xl animate-pulse" />
-                    ))}
-                  </div>
+                  subjectError ? (
+                    <div className="flex items-center justify-between p-3 bg-red-50 border border-red-200 text-red-600 rounded-2xl text-xs font-bold">
+                      <span>Lỗi kết nối máy chủ khi tải danh sách chuyên ngành.</span>
+                      <button
+                        type="button"
+                        onClick={loadSubjects}
+                        className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl transition-colors shrink-0"
+                      >
+                        Thử lại
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-2">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="h-10 w-28 bg-gray-100 rounded-xl animate-pulse" />
+                        ))}
+                      </div>
+                      {isSubjectsLoading && (
+                        <span className="text-xs font-semibold text-amber-600 animate-pulse">
+                          Đang kết nối máy chủ...
+                        </span>
+                      )}
+                    </div>
+                  )
                 ) : (
                   <div className="flex flex-wrap gap-3">
                     {subjects.map((sub) => (

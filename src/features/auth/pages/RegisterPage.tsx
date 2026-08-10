@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import Vector from "@/imports/Vector";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Ghost } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Ghost, Loader2 } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { authService } from "@/services/authService";
+import { getErrorMessage } from "@/services/apiClient";
 import { useAuth } from "@/features/auth/AuthContext";
 
 export function RegisterView() {
@@ -18,6 +19,7 @@ export function RegisterView() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -28,7 +30,7 @@ export function RegisterView() {
       await authService.register({ username, email, password, anonAlias });
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Đăng ký thất bại. Vui lòng thử lại.");
+      setError(getErrorMessage(err, "Đăng ký thất bại. Vui lòng thử lại."));
     } finally {
       setIsLoading(false);
     }
@@ -36,13 +38,15 @@ export function RegisterView() {
 
   const handleGoogleSuccess = async (credential: string) => {
     setGoogleError("");
+    setIsGoogleLoading(true);
     const alias = anonAlias.trim() || `ghost_${Math.random().toString(36).slice(2, 6)}`;
     try {
       await authService.loginWithGoogle(credential, alias);
       refreshUser();
       navigate("/");
     } catch (err) {
-      setGoogleError(err instanceof Error ? err.message : "Đăng nhập Google thất bại.");
+      setGoogleError(getErrorMessage(err, "Đăng nhập Google thất bại."));
+      setIsGoogleLoading(false);
     }
   };
 
@@ -96,7 +100,8 @@ export function RegisterView() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="johndoe"
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
+                  disabled={isLoading || isGoogleLoading}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium disabled:opacity-50"
                 />
               </div>
             </div>
@@ -114,7 +119,8 @@ export function RegisterView() {
                   onChange={(e) => setAnonAlias(e.target.value)}
                   placeholder="ShadowFox"
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
+                  disabled={isLoading || isGoogleLoading}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium disabled:opacity-50"
                 />
               </div>
             </div>
@@ -132,7 +138,8 @@ export function RegisterView() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
+                  disabled={isLoading || isGoogleLoading}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium disabled:opacity-50"
                 />
               </div>
             </div>
@@ -150,7 +157,8 @@ export function RegisterView() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium"
+                  disabled={isLoading || isGoogleLoading}
+                  className="w-full pl-12 pr-12 py-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-[#F15B29] focus:ring-4 focus:ring-[#F15B29]/10 outline-none transition-all font-medium disabled:opacity-50"
                 />
                 <button
                   type="button"
@@ -164,7 +172,7 @@ export function RegisterView() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isGoogleLoading}
               className="w-full py-4 bg-[#F15B29] text-white font-extrabold rounded-2xl hover:bg-[#d94a1d] transition-all shadow-lg shadow-orange-200 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
             >
               {isLoading ? "Đang đăng ký..." : "Tạo tài khoản"}
@@ -188,17 +196,23 @@ export function RegisterView() {
             {googleError && (
               <p className="text-red-500 text-sm font-bold text-center">{googleError}</p>
             )}
-            <GoogleLogin
-              onSuccess={(res) => {
-                if (res.credential) void handleGoogleSuccess(res.credential);
-              }}
-              onError={() => setGoogleError("Đăng nhập Google thất bại.")}
-              theme="outline"
-              size="large"
-              text="signup_with"
-              shape="rectangular"
-              width="368"
-            />
+            {isGoogleLoading ? (
+              <div className="flex items-center justify-center gap-3 py-3.5 px-6 bg-orange-50 border border-orange-200 text-[#F15B29] font-bold rounded-2xl w-full max-w-[368px]">
+                <Loader2 size={20} className="animate-spin" />
+                <span>Đang xử lý tài khoản Google...</span>
+              </div>
+            ) : (
+              <GoogleLogin
+                onSuccess={(res) => {
+                  if (res.credential) void handleGoogleSuccess(res.credential);
+                }}
+                onError={() => setGoogleError("Đăng nhập Google thất bại.")}
+                theme="outline"
+                size="large"
+                text="signup_with"
+                shape="rectangular"
+              />
+            )}
           </div>
 
           <p className="mt-10 text-center text-gray-500 font-medium">
