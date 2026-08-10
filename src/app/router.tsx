@@ -28,7 +28,6 @@ import { AdminSubscriptionPlansView } from "@/features/admin/pages/AdminSubscrip
 import { AdminRolesView } from "@/features/admin/pages/AdminRolesPage";
 import { AdminAnonImagesView } from "@/features/admin/pages/AdminAnonImagesPage";
 import { AdminActivityLogsView } from "@/features/admin/pages/AdminActivityLogsPage";
-import { UserSubscriptionView } from "@/features/billing/pages/UserSubscriptionPage";
 import { PolicyPage } from "@/features/policy/pages/PolicyPage";
 import { PrivacyPage } from "@/features/privacy/pages/PrivacyPage";
 
@@ -111,10 +110,6 @@ export const appRoutes: RouteObject[] = [
           {
             path: "checkout",
             Component: CheckoutView,
-          },
-          {
-            path: "subscription",
-            Component: UserSubscriptionView,
           },
         ],
       },

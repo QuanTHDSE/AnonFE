@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Check, Clock, Loader2, Sparkles, Zap } from "lucide-react";
+import { BadgeCheck, Check, Clock, Crown, Loader2, Sparkles, Zap } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/features/auth/AuthContext";
-import { subscriptionService, type SubscriptionPlan } from "@/services/subscriptionService";
+import {
+  subscriptionService,
+  type SubscriptionPlan,
+  type UserSubscription,
+} from "@/services/subscriptionService";
 import { AppSidebar } from "@/shared/components/layout/AppSidebar";
 
 const PLAN_ICONS = [Sparkles, Zap, Check];
@@ -35,6 +39,7 @@ export function PremiumView() {
   const navigate = useNavigate();
   const { isLoggedIn, user } = useAuth();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [activeSub, setActiveSub] = useState<UserSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -45,18 +50,32 @@ export function PremiumView() {
     }
     setIsLoading(true);
     setError("");
-    subscriptionService
-      .getPlans()
-      .then(setPlans)
+
+    const fetchSubs = user?.id
+      ? subscriptionService.getUserSubscriptions(user.id, 1, 20).catch(() => null)
+      : Promise.resolve(null);
+
+    Promise.all([subscriptionService.getPlans(), fetchSubs])
+      .then(([plansData, subsData]) => {
+        setPlans(plansData);
+        if (subsData?.items) {
+          const now = new Date();
+          const active = subsData.items.find(
+            (s) => s.status === 0 && new Date(s.expiresAt) > now,
+          );
+          setActiveSub(active ?? null);
+        }
+      })
       .catch(() => setError("Không thể tải gói cước. Vui lòng thử lại."))
       .finally(() => setIsLoading(false));
-  }, [isLoggedIn]);
+  }, [isLoggedIn, user?.id]);
 
   const handleSelectPlan = (plan: SubscriptionPlan) => {
     if (!isLoggedIn) {
       navigate("/signin");
       return;
     }
+
     navigate("/checkout", {
       state: {
         planId: plan.id,
@@ -123,6 +142,35 @@ export function PremiumView() {
               </motion.p>
             </div>
 
+            {/* Active Subscription Notice Banner */}
+            {!isLoading && activeSub && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-4xl mx-auto mb-10 p-5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-3xl flex items-center justify-between gap-4 shadow-sm"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-200">
+                    <Crown size={24} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-gray-900 text-base">
+                        Gói cước hiện tại:{" "}
+                        <span className="text-[#F15B29]">{activeSub.planName ?? "Premium"}</span>
+                      </span>
+                      <span className="px-2.5 py-0.5 text-[11px] font-extrabold bg-green-100 text-green-700 rounded-full border border-green-200">
+                        Đang hoạt động
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 font-medium mt-1">
+                      Còn {subscriptionService.daysRemaining(activeSub.expiresAt)} ngày hiệu lực (hết hạn ngày {new Date(activeSub.expiresAt).toLocaleDateString("vi-VN")}).
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {/* Not logged in */}
             {!isLoggedIn && !isLoading && (
               <div className="text-center py-20">
@@ -167,6 +215,8 @@ export function PremiumView() {
                   const Icon = PLAN_ICONS[idx % PLAN_ICONS.length];
                   const features = subscriptionService.planFeatureLabels(plan);
                   const isPopular = idx === 1 && plans.length >= 2;
+                  const isCurrentPlan = activeSub?.planId === plan.id;
+                  const hasActiveSub = activeSub !== null;
 
                   return (
                     <motion.div
@@ -174,12 +224,19 @@ export function PremiumView() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.1 }}
-                      className={`relative bg-white rounded-3xl p-8 border-2 ${color.border} flex flex-col ${isPopular ? "shadow-xl shadow-orange-100" : "shadow-sm"}`}
+                      className={`relative bg-white rounded-3xl p-8 border-2 ${isCurrentPlan ? "border-green-500 ring-2 ring-green-100" : color.border} flex flex-col ${isPopular && !isCurrentPlan ? "shadow-xl shadow-orange-100" : "shadow-sm"}`}
                     >
-                      {color.badge && (
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#F15B29] text-white px-4 py-1 rounded-full text-xs font-bold tracking-wide">
-                          {color.badge}
+                      {isCurrentPlan ? (
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-600 text-white px-4 py-1 rounded-full text-xs font-bold tracking-wide flex items-center gap-1">
+                          <BadgeCheck size={14} />
+                          ĐÃ SỞ HỮU
                         </div>
+                      ) : (
+                        color.badge && (
+                          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#F15B29] text-white px-4 py-1 rounded-full text-xs font-bold tracking-wide">
+                            {color.badge}
+                          </div>
+                        )
                       )}
 
                       {/* Plan header */}
@@ -216,9 +273,17 @@ export function PremiumView() {
                       {/* CTA Button */}
                       <button
                         onClick={() => handleSelectPlan(plan)}
-                        className={`w-full py-3.5 rounded-xl font-bold mb-8 transition-all active:scale-95 ${color.button}`}
+                        className={`w-full py-3.5 rounded-xl font-bold mb-8 transition-all active:scale-95 ${
+                          isCurrentPlan
+                            ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200"
+                            : color.button
+                        }`}
                       >
-                        Mua {plan.name}
+                        {isCurrentPlan
+                          ? `Gia hạn ${plan.name}`
+                          : hasActiveSub
+                            ? `Đổi sang ${plan.name}`
+                            : `Mua ${plan.name}`}
                       </button>
 
                       {/* Features */}
@@ -255,3 +320,4 @@ export function PremiumView() {
     </div>
   );
 }
+

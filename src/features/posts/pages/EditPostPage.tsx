@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
 import { postService } from "@/services/postService";
+import { getErrorMessage } from "@/services/apiClient";
 import type { FeedPostItem, PostMedia } from "@/types";
 
 function fileToObjectUrl(file: File): string {
@@ -70,7 +71,7 @@ export function EditPostView() {
         setExistingMedia(data.media ?? []);
       })
       .catch((err: unknown) =>
-        setFetchError(err instanceof Error ? err.message : "Không tìm thấy bài viết."),
+        setFetchError(getErrorMessage(err, "Không tìm thấy bài viết.")),
       )
       .finally(() => setIsFetching(false));
   }, [id]);
@@ -159,7 +160,7 @@ export function EditPostView() {
       setTimeout(() => navigate(`/posts/${id}`), 1500);
     } catch (err) {
       setSubmitStatus("error");
-      setErrorMessage(err instanceof Error ? err.message : "Cập nhật thất bại. Vui lòng thử lại.");
+      setErrorMessage(getErrorMessage(err, "Cập nhật thất bại. Vui lòng thử lại."));
     } finally {
       setIsLoading(false);
     }

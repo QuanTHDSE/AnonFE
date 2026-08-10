@@ -15,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext";
+import { getErrorMessage } from "@/services/apiClient";
 import {
   subscriptionService,
   parseSepayQrUrl,
@@ -156,6 +157,7 @@ export function CheckoutView() {
       setIsCreating(false);
       return;
     }
+
     subscriptionService
       .createOrder(plan.planId)
       .then((res) => {
@@ -163,11 +165,10 @@ export function CheckoutView() {
         setOrder(res);
       })
       .catch((err: unknown) =>
-        setCreateError(
-          err instanceof Error ? err.message : "Không thể tạo đơn hàng. Vui lòng thử lại.",
-        ),
+        setCreateError(getErrorMessage(err, "Không thể tạo đơn hàng. Vui lòng thử lại.")),
       )
       .finally(() => setIsCreating(false));
+
     return () => {
       if (pollRef.current) clearTimeout(pollRef.current);
     };
@@ -396,12 +397,14 @@ export function CheckoutView() {
                     <p className="font-bold text-red-500 mb-1">Tạo đơn hàng thất bại</p>
                     <p className="text-sm text-red-400">{createError}</p>
                   </div>
-                  <button
-                    onClick={() => navigate("/premium")}
-                    className="px-6 py-3 bg-[#F15B29] text-white font-bold rounded-xl hover:bg-[#d94a1d] transition-colors"
-                  >
-                    Chọn lại gói
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      onClick={() => navigate("/premium")}
+                      className="px-6 py-3 bg-[#F15B29] text-white font-bold rounded-xl hover:bg-[#d94a1d] transition-colors text-sm shadow-md shadow-orange-200"
+                    >
+                      Xem các gói cước
+                    </button>
+                  </div>
                 </motion.div>
               )}
 

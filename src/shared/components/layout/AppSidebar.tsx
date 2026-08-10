@@ -73,8 +73,8 @@ export function AppSidebar({ activeItem }: { activeItem: AppSidebarItem }) {
         />
         <SidebarItem
           icon={Crown}
-          active={activeItem === "premium" || activeItem === "subscription"}
-          onClick={() => (isLoggedIn ? navigate("/subscription") : navigate("/premium"))}
+          active={activeItem === "premium"}
+          onClick={() => navigate("/premium")}
         />
         <SidebarItem
           icon={Bookmark}
