@@ -226,5 +226,10 @@ export const apiClient = {
   delete<T>(path: string): Promise<T> {
     return request<T>(path, { method: "DELETE" });
   },
+  checkHealth(): Promise<boolean> {
+    return fetch(`${BASE_URL}/health`)
+      .then((res) => res.ok)
+      .catch(() => false);
+  },
 };
 
