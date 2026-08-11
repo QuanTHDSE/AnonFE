@@ -82,7 +82,7 @@ const PostCard = ({
     commentService
       .getComments(post.id, 1, 1)
       .then(({ total }) => setCommentsCount(total))
-      .catch(() => {});
+      .catch(() => { });
   }, [post.id]);
 
   const images = post.images ?? [];
@@ -202,9 +202,8 @@ const PostCard = ({
           <button
             onClick={(e) => void handleBookmark(e)}
             disabled={isBookmarking}
-            className={`transition-colors disabled:opacity-50 ${
-              isBookmarked ? "text-[#F15B29]" : "text-gray-400 hover:text-[#F15B29]"
-            }`}
+            className={`transition-colors disabled:opacity-50 ${isBookmarked ? "text-[#F15B29]" : "text-gray-400 hover:text-[#F15B29]"
+              }`}
             title={isBookmarked ? "Bỏ lưu" : "Lưu bài viết"}
           >
             <Bookmark size={20} className={isBookmarked ? "fill-[#F15B29]" : ""} />
@@ -260,9 +259,8 @@ const PostCard = ({
           <button
             onClick={() => void handleUpvote()}
             disabled={isUpvoting}
-            className={`flex items-center gap-1.5 transition-colors group disabled:cursor-default ${
-              hasUpvoted ? "text-red-500" : "text-gray-500 hover:text-red-500"
-            }`}
+            className={`flex items-center gap-1.5 transition-colors group disabled:cursor-default ${hasUpvoted ? "text-red-500" : "text-gray-500 hover:text-red-500"
+              }`}
           >
             <Heart size={20} className={hasUpvoted ? "fill-red-500" : "group-hover:fill-red-500"} />
             <span className="text-sm font-semibold">{likesCount}</span>
@@ -328,7 +326,7 @@ export function HomeView() {
     bookmarkService
       .getBookmarks({ pageSize: 500 })
       .then((res) => setBookmarkedPostIds(new Set(res.items.map((b) => b.postId))))
-      .catch(() => {});
+      .catch(() => { });
   }, [isLoggedIn]);
 
   // The feed API doesn't return premium status, so resolve it per unique author
@@ -424,12 +422,12 @@ export function HomeView() {
     void postService
       .getTrendingTags()
       .then(setTrends)
-      .catch(() => {});
+      .catch(() => { });
 
     void postService
       .getSubjects({ pageSize: 15 })
       .then((res) => setSubjects(res.subjects ?? []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -437,7 +435,7 @@ export function HomeView() {
     userService
       .getTopContributors(5)
       .then((res) => setTopContributors(res.contributors ?? []))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setIsLoadingContributors(false));
   }, []);
 
@@ -649,33 +647,30 @@ export function HomeView() {
                   <button
                     type="button"
                     onClick={() => setSearchTab("all")}
-                    className={`px-3.5 py-1.5 rounded-xl transition-all ${
-                      searchTab === "all"
-                        ? "bg-white text-[#F15B29] shadow-sm"
-                        : "hover:text-gray-900"
-                    }`}
+                    className={`px-3.5 py-1.5 rounded-xl transition-all ${searchTab === "all"
+                      ? "bg-white text-[#F15B29] shadow-sm"
+                      : "hover:text-gray-900"
+                      }`}
                   >
                     Tất cả ({posts.length + pageUsers.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setSearchTab("posts")}
-                    className={`px-3.5 py-1.5 rounded-xl transition-all ${
-                      searchTab === "posts"
-                        ? "bg-white text-[#F15B29] shadow-sm"
-                        : "hover:text-gray-900"
-                    }`}
+                    className={`px-3.5 py-1.5 rounded-xl transition-all ${searchTab === "posts"
+                      ? "bg-white text-[#F15B29] shadow-sm"
+                      : "hover:text-gray-900"
+                      }`}
                   >
                     Bài viết ({posts.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setSearchTab("users")}
-                    className={`px-3.5 py-1.5 rounded-xl transition-all ${
-                      searchTab === "users"
-                        ? "bg-white text-[#F15B29] shadow-sm"
-                        : "hover:text-gray-900"
-                    }`}
+                    className={`px-3.5 py-1.5 rounded-xl transition-all ${searchTab === "users"
+                      ? "bg-white text-[#F15B29] shadow-sm"
+                      : "hover:text-gray-900"
+                      }`}
                   >
                     Tác giả ({pageUsers.length})
                   </button>
@@ -774,7 +769,7 @@ export function HomeView() {
                     )}
 
                     {posts.length === 0 &&
-                    (searchTab === "posts" || (searchTab === "all" && pageUsers.length === 0)) ? (
+                      (searchTab === "posts" || (searchTab === "all" && pageUsers.length === 0)) ? (
                       <div className="flex flex-col items-center justify-center py-24 text-gray-400">
                         <Search size={48} className="mb-4 opacity-30" />
                         <p className="font-bold text-lg">Không tìm thấy kết quả nào</p>
@@ -893,9 +888,8 @@ export function HomeView() {
                             )}
                           </div>
                           <span
-                            className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-[10px] font-extrabold flex items-center justify-center border shadow-xs ${
-                              medal ? medal.bg : "bg-gray-100 text-gray-500 border-gray-200"
-                            }`}
+                            className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full text-[10px] font-extrabold flex items-center justify-center border shadow-xs ${medal ? medal.bg : "bg-gray-100 text-gray-500 border-gray-200"
+                              }`}
                           >
                             {medal ? medal.text : c.rank}
                           </span>
@@ -1013,9 +1007,9 @@ export function HomeView() {
           {/* CTA Banner */}
           <div className="mt-6 bg-gradient-to-br from-[#F15B29] to-[#ff8c69] rounded-[32px] p-6 xl:p-8 text-white relative overflow-hidden shadow-lg shadow-orange-100">
             <div className="relative z-10">
-              <h3 className="text-2xl font-bold mb-2 leading-tight">Join the community!</h3>
+              <h3 className="text-2xl font-bold mb-2 leading-tight">Tham gia cộng đồng!</h3>
               <p className="text-orange-100 text-sm mb-6">
-                Create an account to save posts and connect with creators.
+                Tạo tài khoản để lưu bài viết và kết nối với các nhà sáng tạo.
               </p>
               <button
                 onClick={() => (isLoggedIn ? navigate("/create") : navigate("/signin"))}
@@ -1066,10 +1060,6 @@ export function HomeView() {
             <a href="#" className="hover:text-[#F15B29]">
               Cookies
             </a>
-            <a href="#" className="hover:text-[#F15B29]">
-              About
-            </a>
-            <p>© 2026 Figma Make</p>
           </div>
         </aside>
       </div>
